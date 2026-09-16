@@ -1,0 +1,71 @@
+ <!doctype html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LocalWork V2</title><link rel="stylesheet" href="style.css">
+</head><body>
+<header><a class="brand" href="#"><b>LW</b> LocalWork <small>V2</small></a>
+<nav>
+<button data-scroll="jobs">Browse Jobs</button>
+<button data-open="postModal">Post a Job</button>
+<button class="dark" id="authButton">Login / Sign up</button>
+<button data-open="profileModal" id="profileButton" style="display:none">My Profile</button>
+</nav></header>
+
+<section class="hero"><div><span class="pill">📍 Guwahati • Hyperlocal marketplace</span>
+<h1>Find local work.<br><span>Build local connections.</span></h1>
+<p>Connect clients and freelancers for websites, social media, design, typing, Excel, video editing and more.</p>
+<button class="dark big" data-open="postModal">＋ Post a Job</button>
+<button class="big" data-scroll="jobs">Explore Jobs →</button>
+<div class="stats"><b><strong id="jobCount">0</strong><small>Jobs</small></b><b><strong id="profileCount">0</strong><small>Profiles</small></b><b><strong>₹0</strong><small>Join fee</small></b></div></div>
+<div class="mapcard"><div><small>LOCAL DISCOVERY</small><b>Guwahati</b></div><div class="map"><i>📍</i><i>📍</i><i>📍</i><i>📍</i><span>Find work around you</span></div></div></section>
+
+<section class="quick">
+<button data-cat="Web Development">💻<b>Web Development</b><small>Websites & fixes</small></button>
+<button data-cat="Social Media">📱<b>Social Media</b><small>Posts & management</small></button>
+<button data-cat="Design">🎨<b>Design</b><small>Canva & graphics</small></button>
+<button data-cat="Typing & Excel">⌨️<b>Typing & Excel</b><small>Data & documents</small></button>
+</section>
+
+<section id="jobs" class="section"><div class="sectionhead"><div><small>MARKETPLACE</small><h2>Local jobs</h2><p>New jobs are saved in this browser in V2.</p></div><button class="dark" data-open="postModal">Post job</button></div>
+<div class="filters"><input id="search" placeholder="Search jobs, skills or area…">
+<select id="area"><option value="">All areas</option><option>Guwahati</option><option>Dispur</option><option>Paltan Bazar</option><option>Maligaon</option><option>Six Mile</option><option>Pan Bazaar</option><option>Zoo Road</option><option>Basistha</option></select>
+<select id="category"><option value="">All categories</option><option>Web Development</option><option>Social Media</option><option>Design</option><option>Typing & Excel</option><option>Video Editing</option><option>Other</option></select>
+<select id="sort"><option value="new">Newest</option><option value="budget">Highest budget</option></select></div>
+<div id="jobsGrid" class="grid"></div><div id="empty" class="empty hidden">No matching jobs found.</div></section>
+
+<section class="section"><small>HOW IT WORKS</small><h2>Simple local hiring</h2><div class="steps">
+<div><b>1</b><h3>Create a profile</h3><p>Show your skills, area and contact method.</p></div>
+<div><b>2</b><h3>Post or find work</h3><p>Search jobs by category and locality.</p></div>
+<div><b>3</b><h3>Connect directly</h3><p>Contact the client and discuss the work.</p></div>
+</div></section>
+
+<div id="postModal" class="modal"><div class="box"><button class="close" data-close>×</button><h2>Post a local job</h2><p>Saved only on this device in V2.</p>
+<form id="jobForm"><label>Job title<input name="title" required maxlength="80" placeholder="Instagram post designer"></label>
+<label>Category<select name="category"><option>Web Development</option><option>Social Media</option><option>Design</option><option>Typing & Excel</option><option>Video Editing</option><option>Other</option></select></label>
+<label>Area<select name="area"><option>Guwahati</option><option>Dispur</option><option>Paltan Bazar</option><option>Maligaon</option><option>Six Mile</option><option>Pan Bazaar</option><option>Zoo Road</option><option>Basistha</option></select></label>
+<label>Budget ₹<input name="budget" type="number" min="0" required placeholder="1000"></label>
+<label>Description<textarea name="description" required maxlength="500"></textarea></label>
+<label>Contact method<select name="contact"><option>WhatsApp</option><option>Phone</option><option>Instagram</option><option>Email</option></select></label>
+<label>Your contact<input name="contactValue" required maxlength="100"></label><button class="dark full">Publish job</button></form></div></div>
+
+
+<div id="authModal" class="modal"><div class="box">
+<button class="close" data-close>×</button>
+<h2 id="authTitle">Login</h2>
+<p id="authHint">Use your email and password.</p>
+<form id="authForm">
+<label>Email<input name="email" type="email" required autocomplete="email"></label>
+<label>Password<input name="password" type="password" required minlength="6" autocomplete="current-password"></label>
+<button class="dark full" id="authSubmit">Login</button>
+</form>
+<button id="authSwitch" style="margin-top:10px;background:none;text-decoration:underline">Create a new account</button>
+<button id="logoutButton" class="full" style="display:none;margin-top:10px">Logout</button>
+</div></div>
+
+<div id="profileModal" class="modal"><div class="box"><button class="close" data-close>×</button><h2>My profile</h2><p>Saved only in this browser in V2.</p>
+<form id="profileForm"><label>Name<input name="name" required></label><label>Role<select name="role"><option>Freelancer</option><option>Client</option></select></label>
+<label>Area<select name="area"><option>Guwahati</option><option>Dispur</option><option>Paltan Bazar</option><option>Maligaon</option><option>Six Mile</option></select></label>
+<label>Skills<input name="skills" placeholder="HTML, Canva, Excel"></label><label>About<textarea name="about"></textarea></label>
+<label>Contact<input name="contact" required></label><button class="dark full">Save profile</button></form></div></div>
+<div id="toast"></div><footer>LocalWork V2 • Zero-budget MVP • <span id="year"></span></footer>
+<script type="module" src="script.js"></script></body></html>
