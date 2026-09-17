@@ -22,7 +22,6 @@ import {
   orderBy,
   serverTimestamp,
   where,
-  arrayUnion,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
@@ -32,7 +31,7 @@ import {
 // ===============================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBIjUIplpwSGsZK8WzEeNYMgH8qG3tamyek",
+  apiKey: "AIzaSyBIjUlpWwSGsZK8WzEeNYMgH8qG3tamyek",
   authDomain: "localwork-f6460.firebaseapp.com",
   projectId: "localwork-f6460",
   storageBucket: "localwork-f6460.firebasestorage.app",
@@ -42,7 +41,7 @@ const firebaseConfig = {
 
 
 // ===============================
-// INITIALIZE FIREBASE
+// FIREBASE INIT
 // ===============================
 
 const app = initializeApp(firebaseConfig);
@@ -56,14 +55,15 @@ const db = getFirestore(app);
 
 const $ = (selector) => document.querySelector(selector);
 
-const esc = (value) =>
-  String(value ?? "").replace(/[&<>"']/g, (c) => ({
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#39;"
-  }[c]));
+    "'": "&#039;"
+  }[char]));
+}
 
 function toast(message) {
   const el = $("#toast");
@@ -76,9 +76,9 @@ function toast(message) {
   el.textContent = message;
   el.classList.add("show");
 
-  clearTimeout(window.__toastTimer);
+  clearTimeout(window.toastTimer);
 
-  window.__toastTimer = setTimeout(() => {
+  window.toastTimer = setTimeout(() => {
     el.classList.remove("show");
   }, 3000);
 }
@@ -89,13 +89,19 @@ function toast(message) {
 // ===============================
 
 function openM(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add("open");
+  const modal = document.getElementById(id);
+
+  if (modal) {
+    modal.classList.add("open");
+  }
 }
 
 function closeM(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove("open");
+  const modal = document.getElementById(id);
+
+  if (modal) {
+    modal.classList.remove("open");
+  }
 }
 
 document.querySelectorAll("[data-open]").forEach((button) => {
@@ -107,13 +113,16 @@ document.querySelectorAll("[data-open]").forEach((button) => {
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => {
     const modal = button.closest(".modal");
-    if (modal) modal.classList.remove("open");
+
+    if (modal) {
+      modal.classList.remove("open");
+    }
   });
 });
 
 document.querySelectorAll(".modal").forEach((modal) => {
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
       modal.classList.remove("open");
     }
   });
@@ -124,18 +133,18 @@ document.querySelectorAll(".modal").forEach((modal) => {
 // MOBILE MENU
 // ===============================
 
-const mobileMenuButton = $("#mobileMenuBtn");
+const mobileMenuBtn = $("#mobileMenuBtn");
 const mobileMenu = $("#mobileMenu");
 
-if (mobileMenuButton && mobileMenu) {
-  mobileMenuButton.addEventListener("click", () => {
+if (mobileMenuBtn && mobileMenu) {
+  mobileMenuBtn.addEventListener("click", () => {
     mobileMenu.classList.toggle("open");
   });
 }
 
 
 // ===============================
-// AUTH UI
+// AUTH
 // ===============================
 
 let authMode = "login";
@@ -146,55 +155,69 @@ function setAuthMode(mode) {
   authMode = mode;
 
   const title = $("#authTitle");
-  const switchText = $("#authSwitch");
-  const button = $("#authSubmit");
+  const submit = $("#authSubmit");
+  const switchButton = $("#authSwitch");
 
   if (title) {
     title.textContent =
-      mode === "login" ? "Welcome back" : "Create your account";
-  }
-
-  if (button) {
-    button.textContent =
-      mode === "login" ? "Login" : "Create account";
-  }
-
-  if (switchText) {
-    switchText.textContent =
       mode === "login"
-        ? "Don't have an account? Sign up"
+        ? "Welcome back"
+        : "Create your account";
+  }
+
+  if (submit) {
+    submit.textContent =
+      mode === "login"
+        ? "Login"
+        : "Create account";
+  }
+
+  if (switchButton) {
+    switchButton.textContent =
+      mode === "login"
+        ? "Create a new account"
         : "Already have an account? Login";
   }
 }
 
 function toggleAuth() {
-  setAuthMode(authMode === "login" ? "signup" : "login");
+  setAuthMode(
+    authMode === "login"
+      ? "signup"
+      : "login"
+  );
 }
-
-window.toggleAuth = toggleAuth;
 
 const authSwitch = $("#authSwitch");
 
 if (authSwitch) {
-  authSwitch.addEventListener("click", toggleAuth);
+  authSwitch.addEventListener(
+    "click",
+    toggleAuth
+  );
 }
 
 
 // ===============================
-// AUTH FORM
+// LOGIN / SIGNUP FORM
 // ===============================
 
 const authForm = $("#authForm");
 
 if (authForm) {
-  authForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
 
-    const emailInput = authForm.querySelector('[name="email"]');
-    const passwordInput = authForm.querySelector('[name="password"]');
+  authForm.addEventListener("submit", async (event) => {
 
-    const email = emailInput?.value.trim();
-    const password = passwordInput?.value;
+    event.preventDefault();
+
+    const email =
+      authForm.querySelector('[name="email"]')
+        ?.value
+        .trim();
+
+    const password =
+      authForm.querySelector('[name="password"]')
+        ?.value;
 
     if (!email || !password) {
       toast("Email and password required.");
@@ -202,24 +225,35 @@ if (authForm) {
     }
 
     try {
+
       if (authMode === "signup") {
 
-        const result = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        const result =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
 
         try {
-          await sendEmailVerification(result.user);
-        } catch (verificationError) {
-          console.log("Verification email error:", verificationError);
+          await sendEmailVerification(
+            result.user
+          );
+        } catch (error) {
+          console.log(
+            "Verification email:",
+            error
+          );
         }
 
         await setDoc(
-          doc(db, "users", result.user.uid),
+          doc(
+            db,
+            "users",
+            result.user.uid
+          ),
           {
-            email: email,
+            email,
             name: "",
             role: "Freelancer",
             area: "Guwahati",
@@ -250,28 +284,60 @@ if (authForm) {
 
     } catch (error) {
 
-      console.error(error);
+      console.error(
+        "AUTH ERROR:",
+        error
+      );
 
-      let message = "Something went wrong.";
+      let message =
+        "Login failed.";
 
-      if (error.code === "auth/invalid-credential") {
-        message = "Email or password is incorrect.";
+      if (
+        error.code ===
+        "auth/invalid-credential"
+      ) {
+        message =
+          "Email or password is incorrect.";
       }
 
-      if (error.code === "auth/email-already-in-use") {
-        message = "This email is already registered.";
+      if (
+        error.code ===
+        "auth/email-already-in-use"
+      ) {
+        message =
+          "This email is already registered.";
       }
 
-      if (error.code === "auth/weak-password") {
-        message = "Password should be at least 6 characters.";
+      if (
+        error.code ===
+        "auth/weak-password"
+      ) {
+        message =
+          "Password must be at least 6 characters.";
       }
 
-      if (error.code === "auth/invalid-email") {
-        message = "Enter a valid email.";
+      if (
+        error.code ===
+        "auth/invalid-email"
+      ) {
+        message =
+          "Enter a valid email.";
       }
 
-      if (error.code === "auth/api-key-not-valid") {
-        message = "Firebase API key problem.";
+      if (
+        error.code ===
+        "auth/api-key-not-valid"
+      ) {
+        message =
+          "Firebase API key is invalid.";
+      }
+
+      if (
+        error.code ===
+        "auth/network-request-failed"
+      ) {
+        message =
+          "Network connection problem.";
       }
 
       toast(message);
@@ -284,28 +350,43 @@ if (authForm) {
 // FORGOT PASSWORD
 // ===============================
 
-const forgotPassword = $("#forgotPassword");
+const forgotPassword =
+  $("#forgotPassword");
 
 if (forgotPassword) {
-  forgotPassword.addEventListener("click", async () => {
 
-    const email = prompt("Enter your registered email:");
+  forgotPassword.addEventListener(
+    "click",
+    async () => {
 
-    if (!email) return;
+      const email =
+        prompt(
+          "Enter your registered email:"
+        );
 
-    try {
+      if (!email) return;
 
-      await sendPasswordResetEmail(auth, email);
+      try {
 
-      toast("Password reset email sent.");
+        await sendPasswordResetEmail(
+          auth,
+          email
+        );
 
-    } catch (error) {
+        toast(
+          "Password reset email sent."
+        );
 
-      console.error(error);
+      } catch (error) {
 
-      toast("Unable to send reset email.");
+        console.error(error);
+
+        toast(
+          "Could not send reset email."
+        );
+      }
     }
-  });
+  );
 }
 
 
@@ -313,24 +394,144 @@ if (forgotPassword) {
 // LOGOUT
 // ===============================
 
-const logoutButton = $("#logoutButton");
+const logoutButton =
+  $("#logoutButton");
 
 if (logoutButton) {
-  logoutButton.addEventListener("click", async () => {
 
-    try {
+  logoutButton.addEventListener(
+    "click",
+    async () => {
 
-      await signOut(auth);
+      try {
 
-      toast("Logged out.");
+        await signOut(auth);
 
-    } catch (error) {
+        toast("Logged out.");
 
-      console.error(error);
+      } catch (error) {
 
-      toast("Logout failed.");
+        console.error(error);
+
+        toast("Logout failed.");
+      }
     }
-  });
+  );
+}
+
+
+// ===============================
+// AUTH STATE
+// ===============================
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    currentUser = user;
+
+    const authButton =
+      $("#authButton");
+
+    const profileButton =
+      $("#profileButton");
+
+    const mobileProfile =
+      $("#mobileProfile");
+
+    const chatsNav =
+      $("#chatsNav");
+
+    const mobileChats =
+      $("#mobileChats");
+
+    if (user) {
+
+      if (authButton) {
+        authButton.textContent =
+          "My Account";
+      }
+
+      if (profileButton) {
+        profileButton.style.display =
+          "inline-block";
+      }
+
+      if (mobileProfile) {
+        mobileProfile.style.display =
+          "block";
+      }
+
+      if (chatsNav) {
+        chatsNav.style.display =
+          "inline-block";
+      }
+
+      if (mobileChats) {
+        mobileChats.style.display =
+          "block";
+      }
+
+      await loadProfile();
+
+    } else {
+
+      if (authButton) {
+        authButton.textContent =
+          "Login / Sign up";
+      }
+
+      if (profileButton) {
+        profileButton.style.display =
+          "none";
+      }
+
+      if (mobileProfile) {
+        mobileProfile.style.display =
+          "none";
+      }
+
+      if (chatsNav) {
+        chatsNav.style.display =
+          "none";
+      }
+
+      if (mobileChats) {
+        mobileChats.style.display =
+          "none";
+      }
+    }
+
+    await loadJobs();
+  }
+);
+
+
+// ===============================
+// LOGIN BUTTON
+// ===============================
+
+const authButton =
+  $("#authButton");
+
+if (authButton) {
+
+  authButton.addEventListener(
+    "click",
+    () => {
+
+      if (currentUser) {
+
+        openM("profileModal");
+
+      } else {
+
+        setAuthMode("login");
+
+        openM("authModal");
+      }
+    }
+  );
 }
 
 
@@ -344,175 +545,116 @@ async function loadProfile() {
 
   try {
 
-    const profileRef = doc(
-      db,
-      "users",
-      currentUser.uid
-    );
+    const profileRef =
+      doc(
+        db,
+        "users",
+        currentUser.uid
+      );
 
-    const snap = await getDoc(profileRef);
+    const snapshot =
+      await getDoc(profileRef);
 
-    if (snap.exists()) {
-
-      currentProfile = snap.data();
-
-      const form = $("#profileForm");
-
-      if (form) {
-
-        Object.entries(currentProfile).forEach(([key, value]) => {
-
-          const input = form.querySelector(
-            `[name="${key}"]`
-          );
-
-          if (input && value != null) {
-            input.value = value;
-          }
-
-        });
-
-      }
-    }
-
-  } catch (error) {
-
-    console.error("Profile error:", error);
-  }
-}
-
-
-// ===============================
-// PROFILE FORM
-// ===============================
-
-const profileForm = $("#profileForm");
-
-if (profileForm) {
-
-  profileForm.addEventListener("submit", async (e) => {
-
-    e.preventDefault();
-
-    if (!currentUser) {
-
-      setAuthMode("login");
-      openM("authModal");
-
-      toast("Login first.");
-
+    if (!snapshot.exists()) {
       return;
     }
 
-    const data = Object.fromEntries(
-      new FormData(profileForm)
+    currentProfile =
+      snapshot.data();
+
+    const form =
+      $("#profileForm");
+
+    if (!form) return;
+
+    Object.entries(
+      currentProfile
+    ).forEach(([key, value]) => {
+
+      const input =
+        form.querySelector(
+          `[name="${key}"]`
+        );
+
+      if (
+        input &&
+        value !== null &&
+        value !== undefined
+      ) {
+        input.value = value;
+      }
+    });
+
+  } catch (error) {
+
+    console.error(
+      "PROFILE ERROR:",
+      error
     );
-
-    try {
-
-      await setDoc(
-        doc(db, "users", currentUser.uid),
-        {
-          ...data,
-          email: currentUser.email,
-          updatedAt: serverTimestamp()
-        },
-        { merge: true }
-      );
-
-      currentProfile = data;
-
-      closeM("profileModal");
-
-      toast("Profile saved.");
-
-    } catch (error) {
-
-      console.error(error);
-
-      toast("Profile save failed.");
-    }
-  });
+  }
 }
 
 
-// ===============================
-// AUTH STATE
-// ===============================
+const profileForm =
+  $("#profileForm");
 
-onAuthStateChanged(auth, async (user) => {
+if (profileForm) {
 
-  currentUser = user;
+  profileForm.addEventListener(
+    "submit",
+    async (event) => {
 
-  const authButton = $("#authButton");
-  const logoutBtn = $("#logoutButton");
-  const profileButton = $("#profileButton");
-  const mobileProfile = $("#mobileProfile");
+      event.preventDefault();
 
-  if (user) {
+      if (!currentUser) {
 
-    if (authButton) {
-      authButton.textContent = "Account";
+        setAuthMode("login");
+        openM("authModal");
+
+        return;
+      }
+
+      const data =
+        Object.fromEntries(
+          new FormData(profileForm)
+        );
+
+      try {
+
+        await setDoc(
+          doc(
+            db,
+            "users",
+            currentUser.uid
+          ),
+          {
+            ...data,
+            email:
+              currentUser.email,
+            updatedAt:
+              serverTimestamp()
+          },
+          { merge: true }
+        );
+
+        currentProfile = data;
+
+        closeM("profileModal");
+
+        toast(
+          "Profile saved."
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        toast(
+          "Profile save failed."
+        );
+      }
     }
-
-    if (logoutBtn) {
-      logoutBtn.style.display = "inline-block";
-    }
-
-    if (profileButton) {
-      profileButton.style.display = "inline-block";
-    }
-
-    if (mobileProfile) {
-      mobileProfile.style.display = "block";
-    }
-
-    await loadProfile();
-
-  } else {
-
-    if (authButton) {
-      authButton.textContent = "Login / Sign up";
-    }
-
-    if (logoutBtn) {
-      logoutBtn.style.display = "none";
-    }
-
-    if (profileButton) {
-      profileButton.style.display = "none";
-    }
-
-    if (mobileProfile) {
-      mobileProfile.style.display = "none";
-    }
-  }
-
-  await loadJobs();
-});
-
-
-// ===============================
-// AUTH BUTTON
-// ===============================
-
-const authButton = $("#authButton");
-
-if (authButton) {
-
-  authButton.addEventListener("click", () => {
-
-    if (currentUser) {
-
-      openM("profileModal");
-
-    } else {
-
-      setAuthMode("login");
-      openM("authModal");
-    }
-
-  });
+  );
 }
 
 
@@ -526,83 +668,113 @@ async function loadJobs() {
 
   try {
 
-    const jobsQuery = query(
-      collection(db, "jobs"),
-      orderBy("createdAt", "desc")
-    );
+    const q =
+      query(
+        collection(db, "jobs"),
+        orderBy(
+          "createdAt",
+          "desc"
+        )
+      );
 
-    const snapshot = await getDocs(jobsQuery);
+    const snapshot =
+      await getDocs(q);
 
-    jobs = snapshot.docs.map((item) => ({
-      id: item.id,
-      ...item.data()
-    }));
+    jobs =
+      snapshot.docs.map(
+        (item) => ({
+          id: item.id,
+          ...item.data()
+        })
+      );
 
-    render();
+    renderJobs();
 
   } catch (error) {
 
-    console.error("Jobs loading error:", error);
+    console.error(
+      "JOB ERROR:",
+      error
+    );
 
-    // fallback query if createdAt ordering fails
     try {
 
-      const snapshot = await getDocs(
-        collection(db, "jobs")
-      );
+      const snapshot =
+        await getDocs(
+          collection(
+            db,
+            "jobs"
+          )
+        );
 
-      jobs = snapshot.docs.map((item) => ({
-        id: item.id,
-        ...item.data()
-      }));
+      jobs =
+        snapshot.docs.map(
+          (item) => ({
+            id: item.id,
+            ...item.data()
+          })
+        );
 
-      render();
+      renderJobs();
 
     } catch (secondError) {
 
-      console.error(secondError);
-
-      toast("Unable to load jobs.");
+      console.error(
+        secondError
+      );
     }
   }
 }
 
 
-// ===============================
-// RENDER JOBS
-// ===============================
+function renderJobs() {
 
-function render() {
-
-  const grid = $("#jobsGrid");
+  const grid =
+    $("#jobsGrid");
 
   if (!grid) return;
 
-  const search = ($("#search")?.value || "")
-    .toLowerCase()
-    .trim();
+  const search =
+    (
+      $("#search")?.value ||
+      ""
+    )
+      .toLowerCase()
+      .trim();
 
-  const area = $("#area")?.value || "";
+  const area =
+    $("#area")?.value ||
+    "";
 
-  const category = $("#category")?.value || "";
+  const category =
+    $("#category")?.value ||
+    "";
 
-  const sort = $("#sort")?.value || "new";
+  const sort =
+    $("#sort")?.value ||
+    "new";
 
-  let list = jobs.filter((job) => {
+  let list =
+    jobs.filter((job) => {
 
-    const text = `
-      ${job.title || ""}
-      ${job.description || ""}
-      ${job.category || ""}
-      ${job.area || ""}
-    `.toLowerCase();
+      const text =
+        `
+        ${job.title || ""}
+        ${job.description || ""}
+        ${job.category || ""}
+        ${job.area || ""}
+        `
+          .toLowerCase();
 
-    return (
-      (!search || text.includes(search)) &&
-      (!area || job.area === area) &&
-      (!category || job.category === category)
-    );
-  });
+      return (
+        (!search ||
+          text.includes(search)) &&
+        (!area ||
+          job.area === area) &&
+        (!category ||
+          job.category === category)
+      );
+    });
 
 
   if (sort === "budget") {
@@ -612,88 +784,111 @@ function render() {
         Number(b.budget || 0) -
         Number(a.budget || 0)
     );
-
   }
 
 
-  grid.innerHTML = list.map((job) => {
+  grid.innerHTML =
+    list.map((job) => {
 
-    const budget = Number(
-      job.budget || 0
-    ).toLocaleString("en-IN");
+      const budget =
+        Number(
+          job.budget || 0
+        ).toLocaleString(
+          "en-IN"
+        );
 
-    return `
-      <article class="job">
+      const isOwner =
+        currentUser &&
+        job.ownerId ===
+          currentUser.uid;
 
-        <div class="jobtop">
+      return `
+        <article class="job">
 
-          <span class="tag">
-            ${esc(job.category || "Other")}
-          </span>
+          <div class="jobtop">
 
-          <span class="budget">
-            ₹${budget}
-          </span>
+            <span class="tag">
+              ${esc(
+                job.category ||
+                "Other"
+              )}
+            </span>
 
-        </div>
+            <span class="budget">
+              ₹${budget}
+            </span>
 
-        <h3>
-          ${esc(job.title || "Untitled job")}
-        </h3>
+          </div>
 
-        <div class="desc">
-          ${esc(job.description || "")}
-        </div>
+          <h3>
+            ${esc(
+              job.title ||
+              "Untitled job"
+            )}
+          </h3>
 
-        <div class="meta">
-          📍 ${esc(job.area || "Local")}
-        </div>
+          <div class="desc">
+            ${esc(
+              job.description ||
+              ""
+            )}
+          </div>
 
-        <div class="job-actions">
+          <div class="meta">
+            📍 ${esc(
+              job.area ||
+              "Local"
+            )}
+          </div>
 
-          <button
-            class="contact"
-            onclick="applyToJob('${job.id}')"
-          >
-            Apply for Job
-          </button>
+          <div class="job-actions">
 
-          ${
-            currentUser &&
-            job.ownerId === currentUser.uid
-              ? `
-                <button
-                  class="contact"
-                  onclick="viewApplications('${job.id}')"
-                >
-                  View Applications
-                </button>
-              `
-              : `
-                <button
-                  class="contact"
-                  onclick="chatFromJob(
-                    '${job.id}',
-                    '${encodeURIComponent(job.title || "")}',
-                    '${job.ownerId || ""}'
-                  )"
-                >
-                  Chat
-                </button>
-              `
-          }
+            ${
+              isOwner
+                ? `
+                  <button
+                    class="contact"
+                    onclick="viewApplications('${job.id}')"
+                  >
+                    Applications
+                  </button>
+                `
+                : `
+                  <button
+                    class="contact"
+                    onclick="applyToJob('${job.id}')"
+                  >
+                    Apply for Job
+                  </button>
 
-        </div>
+                  <button
+                    class="contact"
+                    onclick="chatFromJob(
+                      '${job.id}',
+                      '${encodeURIComponent(
+                        job.title || ""
+                      )}',
+                      '${job.ownerId || ""}'
+                    )"
+                  >
+                    Chat
+                  </button>
+                `
+            }
 
-      </article>
-    `;
+          </div>
 
-  }).join("");
+        </article>
+      `;
+
+    }).join("");
 
 
-  const empty = $("#empty");
+  const empty =
+    $("#empty");
 
   if (empty) {
+
     empty.classList.toggle(
       "hidden",
       list.length > 0
@@ -701,17 +896,18 @@ function render() {
   }
 
 
-  const jobCount = $("#jobCount");
+  const count =
+    $("#jobCount");
 
-  if (jobCount) {
-    jobCount.textContent = jobs.length;
+  if (count) {
+    count.textContent =
+      jobs.length;
   }
-
 }
 
 
 // ===============================
-// SEARCH / FILTER
+// FILTERS
 // ===============================
 
 [
@@ -721,20 +917,20 @@ function render() {
   "sort"
 ].forEach((id) => {
 
-  const element = $("#" + id);
+  const element =
+    $("#" + id);
 
-  if (element) {
-    element.addEventListener(
-      "input",
-      render
-    );
+  if (!element) return;
 
-    element.addEventListener(
-      "change",
-      render
-    );
-  }
+  element.addEventListener(
+    "input",
+    renderJobs
+  );
 
+  element.addEventListener(
+    "change",
+    renderJobs
+  );
 });
 
 
@@ -742,337 +938,357 @@ function render() {
 // CATEGORY BUTTONS
 // ===============================
 
-document.querySelectorAll("[data-cat]").forEach((button) => {
+document
+  .querySelectorAll(
+    "[data-cat]"
+  )
+  .forEach((button) => {
 
-  button.addEventListener("click", () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-    const category = $("#category");
+        const category =
+          $("#category");
 
-    if (category) {
-      category.value = button.dataset.cat;
-    }
+        if (category) {
+          category.value =
+            button.dataset.cat;
+        }
 
-    render();
+        renderJobs();
 
-    document
-      .getElementById("jobs")
-      ?.scrollIntoView({
-        behavior: "smooth"
-      });
+        document
+          .getElementById("jobs")
+          ?.scrollIntoView({
+            behavior:
+              "smooth"
+          });
+      }
+    );
   });
-
-});
 
 
 // ===============================
 // POST JOB
 // ===============================
 
-const jobForm = $("#jobForm");
+const jobForm =
+  $("#jobForm");
 
 if (jobForm) {
 
-  jobForm.addEventListener("submit", async (e) => {
+  jobForm.addEventListener(
+    "submit",
+    async (event) => {
 
-    e.preventDefault();
+      event.preventDefault();
+
+      if (!currentUser) {
+
+        setAuthMode("login");
+        openM("authModal");
+
+        toast(
+          "Login first to post a job."
+        );
+
+        return;
+      }
+
+      const data =
+        Object.fromEntries(
+          new FormData(jobForm)
+        );
+
+      data.budget =
+        Number(
+          data.budget || 0
+        );
+
+      data.ownerId =
+        currentUser.uid;
+
+      data.ownerEmail =
+        currentUser.email;
+
+      data.createdAt =
+        serverTimestamp();
+
+      try {
+
+        await addDoc(
+          collection(
+            db,
+            "jobs"
+          ),
+          data
+        );
+
+        jobForm.reset();
+
+        closeM("postModal");
+
+        toast(
+          "Job published successfully."
+        );
+
+        await loadJobs();
+
+      } catch (error) {
+
+        console.error(error);
+
+        toast(
+          "Unable to publish job."
+        );
+      }
+    }
+  );
+}
+
+
+// ===============================
+// APPLY
+// ===============================
+
+window.applyToJob =
+  async function(jobId) {
 
     if (!currentUser) {
 
       setAuthMode("login");
       openM("authModal");
 
-      toast("Login first to post a job.");
+      toast(
+        "Login first to apply."
+      );
 
       return;
     }
 
+    const job =
+      jobs.find(
+        (item) =>
+          item.id === jobId
+      );
 
-    const data = Object.fromEntries(
-      new FormData(jobForm)
-    );
+    if (!job) {
 
+      toast(
+        "Job not found."
+      );
 
-    data.budget = Number(data.budget || 0);
+      return;
+    }
 
-    data.ownerId = currentUser.uid;
+    if (
+      job.ownerId ===
+      currentUser.uid
+    ) {
 
-    data.ownerEmail = currentUser.email;
+      toast(
+        "You cannot apply to your own job."
+      );
 
-    data.createdAt = serverTimestamp();
-
+      return;
+    }
 
     try {
 
+      const q =
+        query(
+          collection(
+            db,
+            "applications"
+          ),
+          where(
+            "jobId",
+            "==",
+            jobId
+          ),
+          where(
+            "applicantId",
+            "==",
+            currentUser.uid
+          )
+        );
+
+      const existing =
+        await getDocs(q);
+
+      if (!existing.empty) {
+
+        toast(
+          "You already applied."
+        );
+
+        return;
+      }
+
       await addDoc(
-        collection(db, "jobs"),
-        data
+        collection(
+          db,
+          "applications"
+        ),
+        {
+          jobId,
+          jobTitle:
+            job.title || "",
+          jobOwnerId:
+            job.ownerId,
+          applicantId:
+            currentUser.uid,
+          applicantEmail:
+            currentUser.email,
+          status:
+            "pending",
+          createdAt:
+            serverTimestamp()
+        }
       );
 
-      jobForm.reset();
-
-      closeM("postModal");
-
-      toast("Job published successfully.");
-
-      await loadJobs();
+      toast(
+        "Application sent."
+      );
 
     } catch (error) {
 
       console.error(error);
 
-      toast("Unable to publish job.");
+      toast(
+        "Application failed."
+      );
+    }
+  };
+
+
+// ===============================
+// APPLICATIONS
+// ===============================
+
+window.viewApplications =
+  async function(jobId) {
+
+    if (!currentUser) {
+      setAuthMode("login");
+      openM("authModal");
+      return;
     }
 
-  });
+    const job =
+      jobs.find(
+        (item) =>
+          item.id === jobId
+      );
 
-}
+    if (!job) return;
 
+    if (
+      job.ownerId !==
+      currentUser.uid
+    ) {
 
-// ===============================
-// CONTACT CLIENT
-// ===============================
-
-window.contactJob = async (jobId) => {
-
-  const job = jobs.find(
-    (item) => item.id === jobId
-  );
-
-  if (!job) return;
-
-  if (!currentUser) {
-
-    setAuthMode("login");
-    openM("authModal");
-
-    toast("Login first.");
-
-    return;
-  }
-
-  if (!job.ownerId) {
-
-    toast("Client information unavailable.");
-
-    return;
-  }
-
-  if (job.ownerId === currentUser.uid) {
-
-    toast("This is your own job.");
-
-    return;
-  }
-
-  await ensureChat(
-    job.id,
-    job.title || "Job",
-    job.ownerId
-  );
-};
-
-
-// ===============================
-// APPLY FOR JOB
-// ===============================
-
-window.applyToJob = async (jobId) => {
-
-  if (!currentUser) {
-
-    setAuthMode("login");
-    openM("authModal");
-
-    toast("Login first to apply.");
-
-    return;
-  }
-
-
-  const job = jobs.find(
-    (item) => item.id === jobId
-  );
-
-  if (!job) {
-
-    toast("Job not found.");
-
-    return;
-  }
-
-
-  if (job.ownerId === currentUser.uid) {
-
-    toast("You cannot apply to your own job.");
-
-    return;
-  }
-
-
-  try {
-
-    const existingQuery = query(
-      collection(db, "applications"),
-      where("jobId", "==", jobId),
-      where("applicantId", "==", currentUser.uid)
-    );
-
-    const existing = await getDocs(
-      existingQuery
-    );
-
-
-    if (!existing.empty) {
-
-      toast("You already applied for this job.");
+      toast(
+        "Only the client can view applications."
+      );
 
       return;
     }
 
+    const list =
+      $("#applicationsList");
 
-    await addDoc(
-      collection(db, "applications"),
-      {
-        jobId: jobId,
-        jobTitle: job.title || "",
-        jobOwnerId: job.ownerId,
-        applicantId: currentUser.uid,
-        applicantEmail: currentUser.email,
-        status: "pending",
-        createdAt: serverTimestamp()
-      }
-    );
+    if (!list) return;
 
+    try {
 
-    toast("Application sent successfully.");
+      const q =
+        query(
+          collection(
+            db,
+            "applications"
+          ),
+          where(
+            "jobId",
+            "==",
+            jobId
+          )
+        );
 
-    await ensureChat(
-      jobId,
-      job.title || "Job",
-      job.ownerId
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast("Application failed.");
-  }
-
-};
-
-
-// ===============================
-// VIEW APPLICATIONS
-// ===============================
-
-window.viewApplications = async (jobId) => {
-
-  if (!currentUser) {
-
-    setAuthMode("login");
-    openM("authModal");
-
-    return;
-  }
-
-
-  const job = jobs.find(
-    (item) => item.id === jobId
-  );
-
-
-  if (!job) return;
-
-
-  if (job.ownerId !== currentUser.uid) {
-
-    toast("Only the client can view applications.");
-
-    return;
-  }
-
-
-  const listElement =
-    $("#applicationsList") ||
-    $("#applicationList");
-
-
-  try {
-
-    const q = query(
-      collection(db, "applications"),
-      where("jobId", "==", jobId)
-    );
-
-
-    const snapshot = await getDocs(q);
-
-
-    if (listElement) {
+      const snapshot =
+        await getDocs(q);
 
       if (snapshot.empty) {
 
-        listElement.innerHTML =
+        list.innerHTML =
           "<p>No applications yet.</p>";
 
       } else {
 
-        listElement.innerHTML =
-          snapshot.docs.map((item) => {
+        list.innerHTML =
+          snapshot.docs
+            .map((item) => {
 
-            const application = item.data();
+              const application =
+                item.data();
 
-            return `
-              <div class="application-card">
+              return `
+                <div class="application-card">
 
-                <h3>
-                  ${esc(
-                    application.applicantEmail ||
-                    "Applicant"
-                  )}
-                </h3>
+                  <h3>
+                    ${esc(
+                      application
+                        .applicantEmail ||
+                      "Applicant"
+                    )}
+                  </h3>
 
-                <p>
-                  Status:
-                  <strong>
-                    ${esc(application.status || "pending")}
-                  </strong>
-                </p>
+                  <p>
+                    Status:
+                    ${esc(
+                      application.status ||
+                      "pending"
+                    )}
+                  </p>
 
-                <button
-                  class="contact"
-                  onclick="chatFromJob(
-                    '${jobId}',
-                    '${encodeURIComponent(job.title || "")}',
-                    '${application.applicantId}'
-                  )"
-                >
-                  Chat with applicant
-                </button>
+                  <button
+                    class="contact"
+                    onclick="chatFromJob(
+                      '${jobId}',
+                      '${encodeURIComponent(
+                        job.title || ""
+                      )}',
+                      '${application.applicantId}'
+                    )"
+                  >
+                    Chat
+                  </button>
 
-              </div>
-            `;
+                </div>
+              `;
 
-          }).join("");
+            })
+            .join("");
       }
+
+      openM(
+        "applicationsModal"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      toast(
+        "Unable to load applications."
+      );
     }
-
-
-    openM("applicationsModal");
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast("Unable to load applications.");
-  }
-
-};
+  };
 
 
 // ===============================
-// CREATE / GET CHAT
+// CHAT
 // ===============================
 
 async function ensureChat(
@@ -1081,106 +1297,114 @@ async function ensureChat(
   otherUserId
 ) {
 
-  if (!currentUser) return null;
+  if (!currentUser) {
+    return null;
+  }
 
   if (!otherUserId) {
 
-    toast("User information unavailable.");
+    toast(
+      "User information unavailable."
+    );
 
     return null;
   }
 
+  if (
+    otherUserId ===
+    currentUser.uid
+  ) {
 
-  if (otherUserId === currentUser.uid) {
-
-    toast("You cannot chat with yourself.");
+    toast(
+      "You cannot chat with yourself."
+    );
 
     return null;
   }
 
-
-  const participants = [
-    currentUser.uid,
-    otherUserId
-  ].sort();
-
+  const participants =
+    [
+      currentUser.uid,
+      otherUserId
+    ].sort();
 
   const chatId =
     `${jobId}_${participants[0]}_${participants[1]}`;
 
+  const chatRef =
+    doc(
+      db,
+      "chats",
+      chatId
+    );
 
-  const chatRef = doc(
-    db,
-    "chats",
-    chatId
-  );
+  const snapshot =
+    await getDoc(chatRef);
 
-
-  const snap = await getDoc(chatRef);
-
-
-  if (!snap.exists()) {
+  if (!snapshot.exists()) {
 
     await setDoc(
       chatRef,
       {
-        jobId: jobId,
-        jobTitle: title,
-        participants: participants,
+        jobId,
+        jobTitle:
+          title || "Job",
+        participants,
         lastMessage: "",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt:
+          serverTimestamp(),
+        updatedAt:
+          serverTimestamp()
       }
     );
-
   }
-
 
   return chatId;
 }
 
 
 // ===============================
-// CHAT FROM JOB
+// OPEN CHAT FROM JOB
 // ===============================
 
-window.chatFromJob = async (
-  jobId,
-  titleEncoded,
-  otherUserId
-) => {
-
-  if (!currentUser) {
-
-    setAuthMode("login");
-    openM("authModal");
-
-    toast("Login first to chat.");
-
-    return;
-  }
-
-
-  const title =
-    decodeURIComponent(titleEncoded || "");
-
-
-  const chatId = await ensureChat(
+window.chatFromJob =
+  async function(
     jobId,
-    title,
+    titleEncoded,
     otherUserId
-  );
+  ) {
 
+    if (!currentUser) {
 
-  if (!chatId) return;
+      setAuthMode("login");
+      openM("authModal");
 
+      toast(
+        "Login first to chat."
+      );
 
-  await openChat(
-    chatId,
-    title
-  );
+      return;
+    }
 
-};
+    const title =
+      decodeURIComponent(
+        titleEncoded || ""
+      );
+
+    const chatId =
+      await ensureChat(
+        jobId,
+        title,
+        otherUserId
+      );
+
+    if (!chatId) return;
+
+    await openChat(
+      chatId,
+      title
+    );
+  };
 
 
 // ===============================
@@ -1194,168 +1418,160 @@ async function openChat(
 
   if (!currentUser) return;
 
-
-  const chatTitle =
+  const titleElement =
     $("#chatTitle");
 
-  if (chatTitle) {
-    chatTitle.textContent =
+  if (titleElement) {
+    titleElement.textContent =
       title || "Chat";
   }
 
-
   openM("chatModal");
 
+  const messages =
+    $("#messages");
 
-  const messagesElement =
-    $("#messages") ||
-    $("#chatMessages");
+  if (!messages) return;
 
-
-  if (!messagesElement) return;
-
-
-  const messagesQuery = query(
-    collection(
-      db,
-      "chats",
-      chatId,
-      "messages"
-    ),
-    orderBy("createdAt", "asc")
-  );
-
-
-  if (window.__chatUnsubscribe) {
-    window.__chatUnsubscribe();
+  if (
+    window.chatUnsubscribe
+  ) {
+    window.chatUnsubscribe();
   }
 
+  const q =
+    query(
+      collection(
+        db,
+        "chats",
+        chatId,
+        "messages"
+      ),
+      orderBy(
+        "createdAt",
+        "asc"
+      )
+    );
 
-  window.__chatUnsubscribe =
+  window.chatUnsubscribe =
     onSnapshot(
-      messagesQuery,
+      q,
       (snapshot) => {
 
-        messagesElement.innerHTML =
-          snapshot.docs.map((item) => {
+        messages.innerHTML =
+          snapshot.docs
+            .map((item) => {
 
-            const message = item.data();
+              const message =
+                item.data();
 
-            const mine =
-              message.senderId ===
-              currentUser.uid;
+              const mine =
+                message.senderId ===
+                currentUser.uid;
 
+              return `
+                <div class="chat-message ${
+                  mine
+                    ? "mine"
+                    : "other"
+                }">
+                  ${esc(
+                    message.text || ""
+                  )}
+                </div>
+              `;
 
-            return `
-              <div
-                class="chat-message ${
-                  mine ? "mine" : "other"
-                }"
-              >
-                ${esc(message.text || "")}
-              </div>
-            `;
+            })
+            .join("");
 
-          }).join("");
-
-
-        messagesElement.scrollTop =
-          messagesElement.scrollHeight;
-
+        messages.scrollTop =
+          messages.scrollHeight;
       },
       (error) => {
 
         console.error(
-          "Chat listener error:",
+          "CHAT ERROR:",
           error
         );
 
-        toast("Unable to load messages.");
+        toast(
+          "Unable to load chat."
+        );
       }
     );
 
 
   const messageForm =
-    $("#messageForm") ||
-    $("#chatForm");
+    $("#messageForm");
 
+  if (!messageForm) return;
 
-  if (messageForm) {
+  messageForm.onsubmit =
+    async (event) => {
 
-    messageForm.onsubmit =
-      async (e) => {
+      event.preventDefault();
 
-        e.preventDefault();
+      const input =
+        messageForm.querySelector(
+          '[name="message"]'
+        );
 
+      if (!input) return;
 
-        const input =
-          messageForm.querySelector(
-            '[name="message"]'
-          ) ||
-          $("#messageInput");
+      const text =
+        input.value.trim();
 
+      if (!text) return;
 
-        if (!input) return;
+      try {
 
+        await addDoc(
+          collection(
+            db,
+            "chats",
+            chatId,
+            "messages"
+          ),
+          {
+            senderId:
+              currentUser.uid,
+            senderEmail:
+              currentUser.email,
+            text,
+            createdAt:
+              serverTimestamp()
+          }
+        );
 
-        const text =
-          input.value.trim();
+        await setDoc(
+          doc(
+            db,
+            "chats",
+            chatId
+          ),
+          {
+            lastMessage:
+              text,
+            updatedAt:
+              serverTimestamp()
+          },
+          {
+            merge: true
+          }
+        );
 
+        input.value = "";
 
-        if (!text) return;
+      } catch (error) {
 
+        console.error(error);
 
-        try {
-
-          await addDoc(
-            collection(
-              db,
-              "chats",
-              chatId,
-              "messages"
-            ),
-            {
-              senderId: currentUser.uid,
-              senderEmail: currentUser.email,
-              text: text,
-              createdAt: serverTimestamp()
-            }
-          );
-
-
-          await setDoc(
-            doc(
-              db,
-              "chats",
-              chatId
-            ),
-            {
-              lastMessage: text,
-              updatedAt: serverTimestamp()
-            },
-            {
-              merge: true
-            }
-          );
-
-
-          input.value = "";
-
-        } catch (error) {
-
-          console.error(error);
-
-          toast("Message failed to send.");
-        }
-
-      };
-
-  }
-
+        toast(
+          "Message failed."
+        );
+      }
+    };
 }
-
-
-window.openChat = openChat;
 
 
 // ===============================
@@ -1366,156 +1582,174 @@ async function loadChats() {
 
   if (!currentUser) return;
 
+  const list =
+    $("#chatList");
 
-  const chatList =
-    $("#chatList") ||
-    $("#chatsList");
-
-
-  if (!chatList) return;
-
+  if (!list) return;
 
   try {
 
-    const q = query(
-      collection(db, "chats"),
-      where(
-        "participants",
-        "array-contains",
-        currentUser.uid
-      )
-    );
-
+    const q =
+      query(
+        collection(
+          db,
+          "chats"
+        ),
+        where(
+          "participants",
+          "array-contains",
+          currentUser.uid
+        )
+      );
 
     const snapshot =
       await getDocs(q);
 
-
     if (snapshot.empty) {
 
-      chatList.innerHTML =
+      list.innerHTML =
         "<p>No chats yet.</p>";
 
       return;
     }
 
+    list.innerHTML =
+      snapshot.docs
+        .map((item) => {
 
-    chatList.innerHTML =
-      snapshot.docs.map((item) => {
+          const chat =
+            item.data();
 
-        const chat =
-          item.data();
+          return `
+            <div class="chat-card">
 
+              <h3>
+                ${esc(
+                  chat.jobTitle ||
+                  "LocalWork Chat"
+                )}
+              </h3>
 
-        return `
-          <div class="chat-card">
+              <p>
+                ${esc(
+                  chat.lastMessage ||
+                  "No messages yet"
+                )}
+              </p>
 
-            <h3>
-              ${esc(
-                chat.jobTitle ||
-                "LocalWork Chat"
-              )}
-            </h3>
+              <button
+                class="contact"
+                onclick="openChat(
+                  '${item.id}',
+                  '${encodeURIComponent(
+                    chat.jobTitle ||
+                    "Chat"
+                  )}'
+                )"
+              >
+                Open Chat
+              </button>
 
-            <p>
-              ${esc(
-                chat.lastMessage ||
-                "No messages yet"
-              )}
-            </p>
+            </div>
+          `;
 
-            <button
-              class="contact"
-              onclick="openChat(
-                '${item.id}',
-                '${encodeURIComponent(
-                  chat.jobTitle || "Chat"
-                )}'
-              )"
-            >
-              Open Chat
-            </button>
-
-          </div>
-        `;
-
-      }).join("");
-
+        })
+        .join("");
 
   } catch (error) {
 
     console.error(error);
 
-    toast("Unable to load chats.");
+    toast(
+      "Unable to load chats."
+    );
+  }
+}
+
+
+// ===============================
+// CHATS BUTTON
+// ===============================
+
+const chatsNav =
+  $("#chatsNav");
+
+const mobileChats =
+  $("#mobileChats");
+
+async function chatsClick() {
+
+  if (!currentUser) {
+
+    setAuthMode("login");
+    openM("authModal");
+
+    toast(
+      "Login first."
+    );
+
+    return;
   }
 
+  await loadChats();
+
+  openM(
+    "chatsModal"
+  );
 }
 
-
-const chatsButton = $("#chatsButton");
-
-if (chatsButton) {
-
-  chatsButton.addEventListener(
+if (chatsNav) {
+  chatsNav.addEventListener(
     "click",
-    async () => {
-
-      if (!currentUser) {
-
-        setAuthMode("login");
-        openM("authModal");
-
-        toast("Login first.");
-
-        return;
-      }
-
-      await loadChats();
-
-      openM("chatsModal");
-
-    }
+    chatsClick
   );
+}
 
+if (mobileChats) {
+  mobileChats.addEventListener(
+    "click",
+    chatsClick
+  );
 }
 
 
 // ===============================
-// SCROLL BUTTONS
+// SCROLL
 // ===============================
 
-document.querySelectorAll(
-  "[data-scroll]"
-).forEach((button) => {
+document
+  .querySelectorAll(
+    "[data-scroll]"
+  )
+  .forEach((button) => {
 
-  button.addEventListener(
-    "click",
-    () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-      const target =
-        document.getElementById(
-          button.dataset.scroll
-        );
+        const target =
+          document.getElementById(
+            button.dataset.scroll
+          );
 
-      if (target) {
+        if (target) {
 
-        target.scrollIntoView({
-          behavior: "smooth"
-        });
-
+          target.scrollIntoView({
+            behavior:
+              "smooth"
+          });
+        }
       }
-
-    }
-  );
-
-});
+    );
+  });
 
 
 // ===============================
 // YEAR
 // ===============================
 
-const year = $("#year");
+const year =
+  $("#year");
 
 if (year) {
   year.textContent =
@@ -1530,5 +1764,5 @@ if (year) {
 setAuthMode("login");
 
 console.log(
-  "LocalWork Firebase V4 loaded successfully."
+  "LocalWork V4 loaded."
 );
