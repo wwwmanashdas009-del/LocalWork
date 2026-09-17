@@ -1,7 +1,14 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import {getFirestore,collection,addDoc,getDocs,getDoc,setDoc,doc,query,orderBy,serverTimestamp,where,arrayUnion} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-const firebaseConfig={apiKey:"AIzaSyBIJ1ulpSgWwSZK8WzEeNYMgH8qG3tamyek",authDomain:"localwork-f6460.firebaseapp.com",projectId:"localwork-f6460",storageBucket:"localwork-f6460.firebasestorage.app",messagingSenderId:"738787718967",appId:"1:738787718967:web:1c5abb9d77528c8b854cb2"};
+const firebaseConfig = {
+  apiKey: "AIzaSyBIJ1ulpSgWwSZK8WzEeNYMgH8qG3tamyek",
+  authDomain: "localwork-f6460.firebaseapp.com",
+  projectId: "localwork-f6460",
+  storageBucket: "localwork-f6460.firebasestorage.app",
+  messagingSenderId: "738787718967",
+  appId: "1:738787718967:web:1c5abb9d77528c8b854cb2"
+};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);const $=s=>document.querySelector(s);const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));let jobs=[],profile=null,currentUser=null,authMode="login",activeChat=null;
 function toast(x){$("#toast").textContent=x;$("#toast").classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>$("#toast").classList.remove("show"),3200)}
 function openM(id){$("#"+id)?.classList.add("open")}function closeM(el){el.closest(".modal")?.classList.remove("open")}
