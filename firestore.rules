@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      match /applications/{applicantId} {
+        allow create: if request.auth != null && request.auth.uid == applicantId && request.resource.data.applicantId == request.auth.uid;
+        allow read: if request.auth != null && (request.auth.uid == applicantId || get(/databases/$(database)/documents/jobs/$(jobId)).data.ownerId == request.auth.uid);
+        allow update: if request.auth != null && get(/databases/$(database)/documents/jobs/$(jobId)).data.ownerId == request.auth.uid;
+        allow delete: if request.auth != null && (request.auth.uid == applicantId || get(/databases/$(database)/documents/jobs/$(jobId)).data.ownerId == request.auth.uid);
+      }
+    }
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    match /chats/{chatId} {
+      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.members;
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.members;
+      match /messages/{messageId} {
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+        allow create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members && request.resource.data.senderId == request.auth.uid;
+      }
+    }
+  }
+}

@@ -1,205 +1,30 @@
-// LocalWork V3 - Firebase Authentication + Firestore
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  setDoc,
-  getDoc,
-  query,
-  orderBy,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBIjUlpWwSGsZK8WzEeNYMgH8qG3tamyek",
-  authDomain: "localwork-f6460.firebaseapp.com",
-  projectId: "localwork-f6460",
-  storageBucket: "localwork-f6460.firebasestorage.app",
-  messagingSenderId: "738787718967",
-  appId: "1:738787718967:web:1c5abb9d77528c8b854cb2"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const $ = s => document.querySelector(s);
-const esc = x => String(x ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let jobs = [];
-let profile = null;
-let currentUser = null;
-let authMode = "login";
-
-function toast(x){
-  $("#toast").textContent = x;
-  $("#toast").classList.add("show");
-  clearTimeout(window.t);
-  window.t = setTimeout(()=>$("#toast").classList.remove("show"),3000);
-}
-function openM(id){ $("#"+id).classList.add("open"); }
-function closeM(el){ el.closest(".modal")?.classList.remove("open"); }
-
-document.querySelectorAll("[data-open]").forEach(x=>x.onclick=()=>openM(x.dataset.open));
-document.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>closeM(x));
-document.querySelectorAll(".modal").forEach(x=>x.onclick=e=>{if(e.target===x)x.classList.remove("open")});
-document.querySelectorAll("[data-scroll]").forEach(x=>x.onclick=()=>document.getElementById(x.dataset.scroll).scrollIntoView({behavior:"smooth"}));
-document.querySelectorAll("[data-cat]").forEach(x=>x.onclick=()=>{$("#category").value=x.dataset.cat;render();document.getElementById("jobs").scrollIntoView({behavior:"smooth"})});
-["search","area","category","sort"].forEach(id=>$("#"+id).addEventListener("input",render));
-
-function setAuthMode(mode){
-  authMode = mode;
-  $("#authTitle").textContent = mode==="login" ? "Login" : "Create account";
-  $("#authSubmit").textContent = mode==="login" ? "Login" : "Sign up";
-  $("#authHint").textContent = mode==="login" ? "Use your email and password." : "Create your LocalWork account.";
-  $("#authSwitch").textContent = mode==="login" ? "Create a new account" : "Already have an account? Login";
-}
-
-$("#authButton").onclick=()=>{
-  if(currentUser) signOut(auth);
-  else { setAuthMode("login"); $("#authModal").classList.add("open"); }
-};
-$("#authSwitch").onclick=()=>setAuthMode(authMode==="login" ? "signup" : "login");
-
-$("#authForm").onsubmit=async e=>{
-  e.preventDefault();
-  const f=Object.fromEntries(new FormData(e.target));
-  try{
-    if(authMode==="login"){
-      await signInWithEmailAndPassword(auth,f.email,f.password);
-      toast("Logged in successfully.");
-    }else{
-      const cred=await createUserWithEmailAndPassword(auth,f.email,f.password);
-      await setDoc(doc(db,"users",cred.user.uid),{
-        email:f.email, role:"Freelancer", createdAt:serverTimestamp()
-      },{merge:true});
-      toast("Account created.");
-    }
-    e.target.reset();
-    $("#authModal").classList.remove("open");
-  }catch(err){
-    console.error(err);
-    toast(err.code?.replace("auth/","") || err.message);
-  }
-};
-
-$("#logoutButton").onclick=async()=>{
-  await signOut(auth);
-  $("#authModal").classList.remove("open");
-  toast("Logged out.");
-};
-
-onAuthStateChanged(auth, async user=>{
-  currentUser=user;
-  $("#profileButton").style.display=user ? "inline-block" : "none";
-  $("#authButton").textContent=user ? "Logout" : "Login / Sign up";
-  $("#logoutButton").style.display=user ? "block" : "none";
-  if(user){
-    const snap=await getDoc(doc(db,"users",user.uid));
-    profile=snap.exists()?snap.data():null;
-    if(profile){
-      Object.entries(profile).forEach(([k,v])=>{
-        const el=$(`#profileForm [name="${k}"]`);
-        if(el && typeof v==="string") el.value=v;
-      });
-    }
-  }else{
-    profile=null;
-  }
-  await loadJobs();
-  render();
-});
-
-async function loadJobs(){
-  try{
-    const q=query(collection(db,"jobs"),orderBy("createdAt","desc"));
-    const snap=await getDocs(q);
-    jobs=snap.docs.map(d=>({id:d.id,...d.data()}));
-  }catch(err){
-    console.error(err);
-    jobs=[];
-    toast("Could not load jobs. Check Firestore rules.");
-  }
-}
-
-function render(){
-  const q=$("#search").value.toLowerCase(), a=$("#area").value, c=$("#category").value, s=$("#sort").value;
-  let list=jobs.filter(j=>
-    (!q||(`${j.title} ${j.description} ${j.category} ${j.area}`).toLowerCase().includes(q)) &&
-    (!a||j.area===a) && (!c||j.category===c)
-  );
-  if(s==="budget") list.sort((x,y)=>Number(y.budget)-Number(x.budget));
-  $("#jobsGrid").innerHTML=list.map(j=>`
-    <article class="job">
-      <div class="jobtop"><span class="tag">${esc(j.category)}</span><span class="budget">₹${Number(j.budget||0).toLocaleString("en-IN")}</span></div>
-      <h3>${esc(j.title)}</h3>
-      <div class="desc">${esc(j.description)}</div>
-      <div class="meta">📍 ${esc(j.area)} • ${esc(j.contact)}</div>
-      <button class="contact" onclick="contactJob('${encodeURIComponent(j.contact||"")}','${encodeURIComponent(j.contactValue||"")}')">Contact client</button>
-    </article>`).join("");
-  $("#empty").classList.toggle("hidden",list.length>0);
-  $("#jobCount").textContent=jobs.length;
-  $("#profileCount").textContent=currentUser?1:0;
-}
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {getFirestore,collection,addDoc,getDocs,getDoc,setDoc,doc,query,orderBy,serverTimestamp,where,arrayUnion} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyBIJ1ulpSgWwSZK8WzEeNYMgH8qG3tamyek",authDomain:"localwork-f6460.firebaseapp.com",projectId:"localwork-f6460",storageBucket:"localwork-f6460.firebasestorage.app",messagingSenderId:"738787718967",appId:"1:738787718967:web:1c5abb9d77528c8b854cb2"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);const $=s=>document.querySelector(s);const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));let jobs=[],profile=null,currentUser=null,authMode="login",activeChat=null;
+function toast(x){$("#toast").textContent=x;$("#toast").classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>$("#toast").classList.remove("show"),3200)}
+function openM(id){$("#"+id)?.classList.add("open")}function closeM(el){el.closest(".modal")?.classList.remove("open")}
+document.querySelectorAll("[data-open]").forEach(x=>x.onclick=()=>{openM(x.dataset.open);$("#mobileMenu")?.classList.remove("open")});document.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>closeM(x));document.querySelectorAll(".modal").forEach(x=>x.onclick=e=>{if(e.target===x)x.classList.remove("open")});document.querySelectorAll("[data-scroll]").forEach(x=>x.onclick=()=>{document.getElementById(x.dataset.scroll).scrollIntoView({behavior:"smooth"});$("#mobileMenu")?.classList.remove("open")});
+$("#mobileMenuBtn").onclick=()=>$("#mobileMenu").classList.toggle("open");document.addEventListener("click",e=>{if(!e.target.closest(".mobile-menu")&&!e.target.closest("#mobileMenuBtn"))$("#mobileMenu")?.classList.remove("open")});
+["search","area","category","sort"].forEach(id=>$("#"+id).addEventListener("input",render));document.querySelectorAll("[data-cat]").forEach(x=>x.onclick=()=>{$("#category").value=x.dataset.cat;render();$("#jobs").scrollIntoView({behavior:"smooth"})});
+function setAuthMode(mode){authMode=mode;$("#authTitle").textContent=mode==="login"?"Welcome back":"Create your account";$("#authHint").textContent=mode==="login"?"Login to apply, post and chat.":"Join LocalWork in a few seconds.";$("#authSubmit").textContent=mode==="login"?"Login":"Sign up";$("#authSwitch").textContent=mode==="login"?"Create a new account":"Already have an account? Login"}
+function toggleAuth(){if(currentUser)signOut(auth);else{setAuthMode("login");openM("authModal")}}$("#authButton").onclick=toggleAuth;$("#mobileAuth").onclick=toggleAuth;$("#authSwitch").onclick=()=>setAuthMode(authMode==="login"?"signup":"login");
+$("#authForm").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{if(authMode==="login")await signInWithEmailAndPassword(auth,f.email,f.password);else{const cred=await createUserWithEmailAndPassword(auth,f.email,f.password);await setDoc(doc(db,"users",cred.user.uid),{email:f.email,role:"Freelancer",createdAt:serverTimestamp()},{merge:true})}e.target.reset();$("#authModal").classList.remove("open");toast(authMode==="login"?"Welcome back 👋":"Account created 🎉")}catch(err){console.error(err);toast(err.code?.replace("auth/","")||err.message)}};
+$("#logoutButton").onclick=async()=>{await signOut(auth);$("#authModal").classList.remove("open");toast("Logged out")};
+async function loadProfile(){if(!currentUser){profile=null;return}const s=await getDoc(doc(db,"users",currentUser.uid));profile=s.exists()?s.data():null;if(profile)Object.entries(profile).forEach(([k,v])=>{const el=$("#profileForm [name=\""+k+"\"]");if(el&&typeof v==="string")el.value=v})}
+onAuthStateChanged(auth,async user=>{currentUser=user;const logged=!!user;$("#profileButton").style.display=logged?"inline-block":"none";$("#mobileProfile").style.display=logged?"block":"none";$("#chatsNav").style.display=logged?"inline-block":"none";$("#mobileChats").style.display=logged?"block":"none";$("#authButton").textContent=logged?"Logout":"Login / Sign up";$("#mobileAuth").textContent=logged?"Logout":"Login / Sign up";$("#logoutButton").style.display=logged?"block":"none";try{await loadProfile()}catch(e){console.error(e)}await loadJobs();render()});
+async function loadJobs(){try{const snap=await getDocs(query(collection(db,"jobs"),orderBy("createdAt","desc")));jobs=snap.docs.map(d=>({id:d.id,...d.data()}))}catch(err){console.error(err);jobs=[];toast("Could not load jobs. Check Firestore rules.")}}
+function render(){const q=(($("#search").value)||"").toLowerCase(),a=$("#area").value,c=$("#category").value,s=$("#sort").value;let list=jobs.filter(j=>(!q||(`${j.title} ${j.description} ${j.category} ${j.area}`).toLowerCase().includes(q))&&(!a||j.area===a)&&(!c||j.category===c));if(s==="budget")list.sort((x,y)=>Number(y.budget)-Number(x.budget));$("#jobsGrid").innerHTML=list.map((j,i)=>{const owner=currentUser&&j.ownerId===currentUser.uid;return `<article class="job" style="animation-delay:${Math.min(i*35,280)}ms"><div class="jobtop"><span class="tag">${esc(j.category)}</span><span class="budget">₹${Number(j.budget||0).toLocaleString("en-IN")}</span></div><h3>${esc(j.title)}</h3><div class="desc">${esc(j.description)}</div><div class="meta">📍 ${esc(j.area)} • ${esc(j.contact)}</div>${owner?`<button class="applications" onclick="viewApplications('${j.id}')">👥 View applications</button>`:`<button class="apply" onclick="applyToJob('${j.id}')">⚡ Apply for this job</button>`}<button class="chatbtn" onclick="chatFromJob('${j.id}','${encodeURIComponent(j.title||"")}','${j.ownerId||""}')">💬 Chat with client</button><button class="contact" onclick="contactJob('${encodeURIComponent(j.contact||"")}','${encodeURIComponent(j.contactValue||"")}')">Contact client</button></article>`}).join("");$("#empty").classList.toggle("hidden",list.length>0);$("#jobCount").textContent=jobs.length;$("#profileCount").textContent=currentUser?1:0}
 window.contactJob=(m,v)=>toast(decodeURIComponent(m)+": "+decodeURIComponent(v));
-
-$("#jobForm").onsubmit=async e=>{
-  e.preventDefault();
-  if(!currentUser){
-    setAuthMode("login");
-    openM("authModal");
-    toast("Please login first.");
-    return;
-  }
-  const f=Object.fromEntries(new FormData(e.target));
-  try{
-    await addDoc(collection(db,"jobs"),{
-      title:f.title, category:f.category, area:f.area,
-      budget:Number(f.budget), description:f.description,
-      contact:f.contact, contactValue:f.contactValue,
-      ownerId:currentUser.uid, ownerEmail:currentUser.email,
-      createdAt:serverTimestamp()
-    });
-    e.target.reset();
-    e.target.closest(".modal").classList.remove("open");
-    await loadJobs(); render();
-    toast("Job published for everyone.");
-  }catch(err){
-    console.error(err);
-    toast(err.code?.replace("firestore/","") || err.message);
-  }
-};
-
-$("#profileForm").onsubmit=async e=>{
-  e.preventDefault();
-  if(!currentUser){
-    setAuthMode("login");
-    openM("authModal");
-    return;
-  }
-  const f=Object.fromEntries(new FormData(e.target));
-  try{
-    await setDoc(doc(db,"users",currentUser.uid),{
-      ...f,email:currentUser.email,updatedAt:serverTimestamp()
-    },{merge:true});
-    profile=f;
-    e.target.closest(".modal").classList.remove("open");
-    render();
-    toast("Profile saved to Firebase.");
-  }catch(err){
-    console.error(err);
-    toast(err.message);
-  }
-};
-
-$("#year").textContent=new Date().getFullYear();
-setAuthMode("login");
+window.applyToJob=async jobId=>{if(!currentUser){setAuthMode("login");openM("authModal");toast("Login first to apply");return}const job=jobs.find(j=>j.id===jobId);if(!job)return;if(job.ownerId===currentUser.uid){toast("You cannot apply to your own job");return}try{await setDoc(doc(db,"jobs",jobId,"applications",currentUser.uid),{applicantId:currentUser.uid,applicantEmail:currentUser.email,jobId,jobTitle:job.title,status:"pending",createdAt:serverTimestamp()},{merge:true});toast("Application sent ✅")}catch(err){console.error(err);toast(err.code?.replace("firestore/","")||err.message)}};
+window.viewApplications=async jobId=>{const job=jobs.find(j=>j.id===jobId);if(!currentUser||!job||job.ownerId!==currentUser.uid){toast("Only the client who posted this job can view applications");return}try{const snap=await getDocs(query(collection(db,"jobs",jobId,"applications"),orderBy("createdAt","desc")));$("#applicationsHint").textContent=`Applications for: ${job.title}`;$("#applicationsList").innerHTML=snap.empty?`<div class="chat-empty">No applications yet.</div>`:snap.docs.map(d=>{const a=d.data();return `<div class="application-item"><b>${esc(a.applicantEmail||"Applicant")}</b><span class="muted">Status: ${esc(a.status||"pending")}</span><button class="chatbtn" onclick="openChat('${jobId}','${encodeURIComponent(job.title||"")}','${a.applicantId}')">💬 Chat with applicant</button></div>`}).join("");openM("applicationsModal")}catch(err){console.error(err);toast(err.message)}};
+async function ensureChat(jobId,title,otherUid){const ids=[currentUser.uid,otherUid].sort();const chatId=`${jobId}_${ids[0]}_${ids[1]}`;const ref=doc(db,"chats",chatId);const existing=await getDoc(ref);if(!existing.exists())await setDoc(ref,{chatId,jobId,title,members:ids,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),lastMessage:""});return chatId}
+window.chatFromJob=async(jobId,titleEncoded,otherUid)=>{if(!currentUser){setAuthMode("login");openM("authModal");toast("Login first to chat");return}if(!otherUid||otherUid===currentUser.uid){toast("Chat is available with another user");return}await openChat(jobId,titleEncoded,otherUid)};
+window.openChat=async(jobId,titleEncoded,otherUid)=>{if(!currentUser||!otherUid||otherUid===currentUser.uid)return;try{const title=decodeURIComponent(titleEncoded);const chatId=await ensureChat(jobId,title,otherUid);activeChat={chatId,jobId,otherUid,title};$("#chatTitle").textContent=title;$("#applicationsModal").classList.remove("open");$("#chatsModal").classList.remove("open");openM("chatModal");await loadMessages()}catch(err){console.error(err);toast(err.code?.replace("firestore/","")||err.message)}};
+async function loadMessages(){if(!activeChat)return;try{const snap=await getDocs(query(collection(db,"chats",activeChat.chatId,"messages"),orderBy("createdAt","asc")));$("#messages").innerHTML=snap.empty?`<div class="chat-empty">No messages yet. Say hello 👋</div>`:snap.docs.map(d=>{const m=d.data();return `<div class="msg ${m.senderId===currentUser.uid?"mine":""}">${esc(m.text)}<small>${m.senderId===currentUser.uid?"You":esc(m.senderEmail||"User")}</small></div>`}).join("");$("#messages").scrollTop=$("#messages").scrollHeight}catch(err){console.error(err);toast("Could not load messages. Check Firestore rules.")}}
+$("#messageForm").onsubmit=async e=>{e.preventDefault();if(!activeChat||!currentUser)return;const f=Object.fromEntries(new FormData(e.target));try{await addDoc(collection(db,"chats",activeChat.chatId,"messages"),{text:f.message.trim(),senderId:currentUser.uid,senderEmail:currentUser.email,createdAt:serverTimestamp(),jobId:activeChat.jobId});await setDoc(doc(db,"chats",activeChat.chatId),{updatedAt:serverTimestamp(),lastMessage:f.message.trim()}, {merge:true});e.target.reset();await loadMessages()}catch(err){console.error(err);toast(err.code?.replace("firestore/","")||err.message)}};
+$("#jobForm").onsubmit=async e=>{e.preventDefault();if(!currentUser){setAuthMode("login");openM("authModal");toast("Login first to post a job");return}const f=Object.fromEntries(new FormData(e.target));try{await addDoc(collection(db,"jobs"),{title:f.title,category:f.category,area:f.area,budget:Number(f.budget),description:f.description,contact:f.contact,contactValue:f.contactValue,ownerId:currentUser.uid,ownerEmail:currentUser.email,createdAt:serverTimestamp()});e.target.reset();$("#postModal").classList.remove("open");await loadJobs();render();toast("Job published 🎉")}catch(err){console.error(err);toast(err.code?.replace("firestore/","")||err.message)}};
+$("#profileForm").onsubmit=async e=>{e.preventDefault();if(!currentUser){setAuthMode("login");openM("authModal");return}const f=Object.fromEntries(new FormData(e.target));try{await setDoc(doc(db,"users",currentUser.uid),{...f,email:currentUser.email,updatedAt:serverTimestamp()},{merge:true});profile=f;$("#profileModal").classList.remove("open");render();toast("Profile saved ✅")}catch(err){console.error(err);toast(err.message)}};
+async function loadChats(){if(!currentUser){toast("Login first to view chats");return}try{const snap=await getDocs(query(collection(db,"chats"),where("members","array-contains",currentUser.uid),orderBy("updatedAt","desc")));$("#chatList").innerHTML=snap.empty?`<div class="chat-empty">No chats yet. Apply to a job or open a client chat.</div>`:snap.docs.map(d=>{const c=d.data();const other=(c.members||[]).find(x=>x!==currentUser.uid)||"";return `<div class="chat-item"><b>${esc(c.title||"LocalWork chat")}</b><span class="muted">${esc(c.lastMessage||"No messages yet")}</span><button class="chatbtn" onclick="openChat('${c.jobId}','${encodeURIComponent(c.title||"")}','${other}')">Open chat →</button></div>`}).join("");openM("chatsModal")}catch(err){console.error(err);toast("Could not load chats. If you see an index error, open the link shown in the console or create the suggested Firestore index.")}}
+$("#chatsNav").onclick=loadChats;$("#mobileChats").onclick=loadChats;$("#year").textContent=new Date().getFullYear();setAuthMode("login");
