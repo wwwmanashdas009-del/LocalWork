@@ -31,7 +31,7 @@ import {
 // =====================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBIjUIplpwSGsZK8WzEeNYMgH8qG3tamyek",
+  apiKey: "AIzaSyBIjUlpWwSGsZK8WzEeNYMgH8qG3tamyek",
   authDomain: "localwork-f6460.firebaseapp.com",
   projectId: "localwork-f6460",
   storageBucket: "localwork-f6460.firebasestorage.app",
