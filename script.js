@@ -1647,7 +1647,6 @@ window.viewApplications =
     }
 
   };
-
 // =====================================================
 // CREATE / GET CHAT - FIXED
 // =====================================================
@@ -1676,10 +1675,7 @@ async function ensureChat(
   }
 
 
-  if (
-    otherUserId ===
-    currentUser.uid
-  ) {
+  if (otherUserId === currentUser.uid) {
 
     toast("You cannot chat with yourself.");
 
@@ -1688,14 +1684,12 @@ async function ensureChat(
   }
 
 
-  // Both users must be participants
   const participants = [
     currentUser.uid,
     otherUserId
   ].sort();
 
 
-  // Stable chat ID
   const chatId =
     `${jobId}_${participants[0]}_${participants[1]}`;
 
@@ -1709,15 +1703,14 @@ async function ensureChat(
 
 
   // IMPORTANT:
-  // Do NOT getDoc() first.
-  // setDoc() will create the chat if it
-  // does not exist, or update it if it exists.
+  // Do NOT use getDoc() here.
+  // setDoc() with merge works for both
+  // new and existing chat documents.
 
   await setDoc(
     chatRef,
     {
-      jobId:
-        jobId,
+      jobId: jobId,
 
       jobTitle:
         title || "Job",
@@ -1725,13 +1718,7 @@ async function ensureChat(
       participants:
         participants,
 
-      lastMessage:
-        "",
-
       updatedAt:
-        serverTimestamp(),
-
-      createdAt:
         serverTimestamp()
     },
     {
