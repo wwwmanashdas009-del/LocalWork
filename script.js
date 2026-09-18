@@ -1648,9 +1648,8 @@ window.viewApplications =
 
   };
 
-
 // =====================================================
-// CREATE / GET CHAT
+// CREATE / GET CHAT - FIXED
 // =====================================================
 
 async function ensureChat(
@@ -1661,9 +1660,7 @@ async function ensureChat(
 
   if (!currentUser) {
 
-    toast(
-      "Login first."
-    );
+    toast("Login first.");
 
     return null;
 
@@ -1672,9 +1669,7 @@ async function ensureChat(
 
   if (!otherUserId) {
 
-    toast(
-      "User information unavailable."
-    );
+    toast("User information unavailable.");
 
     return null;
 
@@ -1686,22 +1681,21 @@ async function ensureChat(
     currentUser.uid
   ) {
 
-    toast(
-      "You cannot chat with yourself."
-    );
+    toast("You cannot chat with yourself.");
 
     return null;
 
   }
 
 
-  const participants =
-    [
-      currentUser.uid,
-      otherUserId
-    ].sort();
+  // Both users must be participants
+  const participants = [
+    currentUser.uid,
+    otherUserId
+  ].sort();
 
 
+  // Stable chat ID
   const chatId =
     `${jobId}_${participants[0]}_${participants[1]}`;
 
@@ -1714,36 +1708,36 @@ async function ensureChat(
     );
 
 
-  const snapshot =
-    await getDoc(chatRef);
+  // IMPORTANT:
+  // Do NOT getDoc() first.
+  // setDoc() will create the chat if it
+  // does not exist, or update it if it exists.
 
+  await setDoc(
+    chatRef,
+    {
+      jobId:
+        jobId,
 
-  if (!snapshot.exists()) {
+      jobTitle:
+        title || "Job",
 
-    await setDoc(
-      chatRef,
-      {
-        jobId:
-          jobId,
+      participants:
+        participants,
 
-        jobTitle:
-          title || "Job",
+      lastMessage:
+        "",
 
-        participants:
-          participants,
+      updatedAt:
+        serverTimestamp(),
 
-        lastMessage:
-          "",
-
-        createdAt:
-          serverTimestamp(),
-
-        updatedAt:
-          serverTimestamp()
-      }
-    );
-
-  }
+      createdAt:
+        serverTimestamp()
+    },
+    {
+      merge: true
+    }
+  );
 
 
   return chatId;
