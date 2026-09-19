@@ -55,71 +55,117 @@ const db = getFirestore(app);
 
 const $ = (selector) => document.querySelector(selector);
 
+const $$ = (selector) =>
+  document.querySelectorAll(selector);
+
 function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[char]));
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[char])
+  );
 }
 
-function toast(message) {
-  const el = $("#toast");
+function safeId(value) {
+  return String(value || "")
+    .replace(/[^a-zA-Z0-9_-]/g, "");
+}
 
-  if (!el) {
+function toast(message, title = "LocalWork") {
+
+  const toastBox = $("#toast");
+
+  if (!toastBox) {
     alert(message);
     return;
   }
 
-  el.textContent = message;
-  el.classList.add("show");
+  const titleEl = $("#toastTitle");
+  const textEl = $("#toastText");
+  const iconEl = $("#toastIcon");
 
-  clearTimeout(window.toastTimer);
+  if (titleEl) titleEl.textContent = title;
+  if (textEl) textEl.textContent = message;
+  if (iconEl) iconEl.textContent = "✓";
 
-  window.toastTimer = setTimeout(() => {
-    el.classList.remove("show");
+  toastBox.classList.add("show");
+
+  clearTimeout(window.__toastTimer);
+
+  window.__toastTimer = setTimeout(() => {
+    toastBox.classList.remove("show");
   }, 3000);
 }
 
-function openM(id) {
+function openModal(id) {
+
   const modal = document.getElementById(id);
 
   if (modal) {
     modal.classList.add("open");
+    document.body.classList.add("modal-open");
   }
 }
 
-function closeM(id) {
+function closeModal(id) {
+
   const modal = document.getElementById(id);
 
   if (modal) {
     modal.classList.remove("open");
   }
+
+  if (!document.querySelector(".modal.open")) {
+    document.body.classList.remove("modal-open");
+  }
 }
+
+function closeAllModals() {
+
+  $$(".modal.open").forEach((modal) => {
+    modal.classList.remove("open");
+  });
+
+  document.body.classList.remove("modal-open");
+}
+
+function getField(form, name) {
+
+  if (!form) return "";
+
+  const field = form.querySelector(
+    `[name="${name}"]`
+  );
+
+  return field ? field.value.trim() : "";
+}
+
+
+// =====================================================
+// GLOBAL STATE
+// =====================================================
+
+let currentUser = null;
+let currentProfile = {};
+let jobs = [];
+let authMode = "login";
+
+window.chatUnsubscribe = null;
+window.currentChatId = null;
+window.currentChatUserId = null;
+window.currentChatJobId = null;
 
 
 // =====================================================
 // MODALS
 // =====================================================
 
-document.querySelectorAll("[data-open]").forEach((button) => {
-
-  button.addEventListener("click", () => {
-
-    const id = button.dataset.open;
-
-    if (id) {
-      openM(id);
-    }
-
-  });
-
-});
-
-
-document.querySelectorAll("[data-close]").forEach((button) => {
+$$("[data-close]").forEach((button) => {
 
   button.addEventListener("click", () => {
 
@@ -129,17 +175,25 @@ document.querySelectorAll("[data-close]").forEach((button) => {
       modal.classList.remove("open");
     }
 
+    if (!document.querySelector(".modal.open")) {
+      document.body.classList.remove("modal-open");
+    }
+
   });
 
 });
 
 
-document.querySelectorAll(".modal").forEach((modal) => {
+$$(".modal").forEach((modal) => {
 
   modal.addEventListener("click", (event) => {
 
     if (event.target === modal) {
       modal.classList.remove("open");
+
+      if (!document.querySelector(".modal.open")) {
+        document.body.classList.remove("modal-open");
+      }
     }
 
   });
@@ -152,27 +206,36 @@ document.querySelectorAll(".modal").forEach((modal) => {
 // =====================================================
 
 const mobileMenuBtn = $("#mobileMenuBtn");
-const mobileMenu = $("#mobileMenu");
+const mobileNav = $("#mobileNav");
 
-if (mobileMenuBtn && mobileMenu) {
+if (mobileMenuBtn && mobileNav) {
 
   mobileMenuBtn.addEventListener("click", () => {
-    mobileMenu.classList.toggle("open");
+
+    mobileNav.classList.toggle("open");
+
   });
 
 }
 
 
 // =====================================================
-// GLOBAL STATE
+// MOBILE NAV CLOSE
 // =====================================================
 
-let authMode = "login";
-let currentUser = null;
-let currentProfile = null;
-let jobs = [];
+$$(
+  "#mNavJobs,#mNavPost,#mNavChats,#mNavAccount"
+).forEach((button) => {
 
-window.chatUnsubscribe = null;
+  button.addEventListener("click", () => {
+
+    if (mobileNav) {
+      mobileNav.classList.remove("open");
+    }
+
+  });
+
+});
 
 
 // =====================================================
@@ -183,278 +246,384 @@ function setAuthMode(mode) {
 
   authMode = mode;
 
-  const title = $("#authTitle");
+  const loginTab = $("#loginTab");
+  const signupTab = $("#signupTab");
+
+  const nameField = $("#authName");
+  const roleField = $("#authRole");
+
   const submit = $("#authSubmit");
-  const switchButton = $("#authSwitch");
 
-  if (title) {
+  const message = $("#authMessage");
 
-    title.textContent =
+  if (loginTab) {
+    loginTab.classList.toggle(
+      "active",
       mode === "login"
-        ? "Welcome back"
-        : "Create your account";
+    );
+  }
 
+  if (signupTab) {
+    signupTab.classList.toggle(
+      "active",
+      mode === "signup"
+    );
+  }
+
+  if (nameField) {
+    nameField.style.display =
+      mode === "signup"
+        ? "block"
+        : "none";
+  }
+
+  if (roleField) {
+    roleField.style.display =
+      mode === "signup"
+        ? "block"
+        : "none";
   }
 
   if (submit) {
-
     submit.textContent =
       mode === "login"
         ? "Login"
-        : "Create account";
-
+        : "Create Account";
   }
 
-  if (switchButton) {
-
-    switchButton.textContent =
-      mode === "login"
-        ? "Create a new account"
-        : "Already have an account? Login";
-
+  if (message) {
+    message.textContent = "";
   }
 
 }
 
+const loginTab = $("#loginTab");
+const signupTab = $("#signupTab");
 
-const authSwitch = $("#authSwitch");
+if (loginTab) {
+  loginTab.addEventListener(
+    "click",
+    () => setAuthMode("login")
+  );
+}
 
-if (authSwitch) {
-
-  authSwitch.addEventListener("click", () => {
-
-    setAuthMode(
-      authMode === "login"
-        ? "signup"
-        : "login"
-    );
-
-  });
-
+if (signupTab) {
+  signupTab.addEventListener(
+    "click",
+    () => setAuthMode("signup")
+  );
 }
 
 
 // =====================================================
-// AUTH BUTTONS
+// OPEN AUTH
 // =====================================================
-
-const authButton = $("#authButton");
-const mobileAuth = $("#mobileAuth");
 
 function openLogin() {
 
   if (currentUser) {
 
-    openM("profileModal");
+    openModal("profileModal");
 
   } else {
 
     setAuthMode("login");
-    openM("authModal");
+    openModal("authModal");
 
   }
 
 }
 
+const loginBtn = $("#loginBtn");
 
-if (authButton) {
-
-  authButton.addEventListener("click", openLogin);
-
+if (loginBtn) {
+  loginBtn.addEventListener(
+    "click",
+    openLogin
+  );
 }
 
 
-if (mobileAuth) {
+// =====================================================
+// MOBILE ACCOUNT
+// =====================================================
 
-  mobileAuth.addEventListener("click", openLogin);
+const mNavAccount = $("#mNavAccount");
+
+if (mNavAccount) {
+
+  mNavAccount.addEventListener(
+    "click",
+    openLogin
+  );
 
 }
 
 
 // =====================================================
-// LOGIN / SIGNUP
+// AUTH FORM
 // =====================================================
 
 const authForm = $("#authForm");
 
 if (authForm) {
 
-  authForm.addEventListener("submit", async (event) => {
+  authForm.addEventListener(
+    "submit",
+    async (event) => {
 
-    event.preventDefault();
+      event.preventDefault();
 
-    const email =
-      authForm.querySelector('[name="email"]')
-        ?.value
-        .trim();
+      const email =
+        getField(
+          authForm,
+          "email"
+        );
 
-    const password =
-      authForm.querySelector('[name="password"]')
-        ?.value;
+      const password =
+        getField(
+          authForm,
+          "password"
+        );
 
-    if (!email || !password) {
+      const name =
+        getField(
+          authForm,
+          "name"
+        );
 
-      toast("Email and password required.");
+      const role =
+        getField(
+          authForm,
+          "role"
+        ) || "Freelancer";
 
-      return;
-    }
+
+      if (!email || !password) {
+
+        toast(
+          "Email and password required."
+        );
+
+        return;
+      }
 
 
-    try {
+      if (
+        authMode === "signup" &&
+        password.length < 6
+      ) {
 
-      if (authMode === "signup") {
+        toast(
+          "Password must be at least 6 characters."
+        );
 
-        const result =
-          await createUserWithEmailAndPassword(
+        return;
+      }
+
+
+      const submit =
+        $("#authSubmit");
+
+      if (submit) {
+        submit.disabled = true;
+        submit.textContent =
+          authMode === "login"
+            ? "Logging in..."
+            : "Creating account...";
+      }
+
+
+      try {
+
+        if (authMode === "signup") {
+
+          const result =
+            await createUserWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+
+
+          try {
+
+            await sendEmailVerification(
+              result.user
+            );
+
+          } catch (verificationError) {
+
+            console.log(
+              "Verification email:",
+              verificationError
+            );
+
+          }
+
+
+          await setDoc(
+            doc(
+              db,
+              "users",
+              result.user.uid
+            ),
+            {
+              uid:
+                result.user.uid,
+
+              email:
+                email,
+
+              name:
+                name,
+
+              role:
+                role,
+
+              area:
+                "",
+
+              skills:
+                "",
+
+              about:
+                "",
+
+              contact:
+                "",
+
+              createdAt:
+                serverTimestamp()
+            },
+            {
+              merge: true
+            }
+          );
+
+
+          toast(
+            "Account created successfully!",
+            "Welcome to LocalWork"
+          );
+
+        } else {
+
+          await signInWithEmailAndPassword(
             auth,
             email,
             password
           );
 
 
-        try {
-
-          await sendEmailVerification(
-            result.user
-          );
-
-        } catch (verificationError) {
-
-          console.log(
-            "Verification email error:",
-            verificationError
+          toast(
+            "Login successful!",
+            "Welcome back"
           );
 
         }
 
 
-        await setDoc(
-          doc(
-            db,
-            "users",
-            result.user.uid
-          ),
-          {
-            email: email,
-            name: "",
-            role: "Freelancer",
-            area: "Guwahati",
-            skills: "",
-            about: "",
-            contact: "",
-            createdAt: serverTimestamp()
-          },
-          {
-            merge: true
-          }
+        authForm.reset();
+
+        closeModal("authModal");
+
+
+      } catch (error) {
+
+        console.error(
+          "AUTH ERROR:",
+          error
         );
+
+        let message =
+          "Something went wrong.";
+
+
+        switch (error.code) {
+
+          case "auth/invalid-credential":
+          case "auth/wrong-password":
+          case "auth/user-not-found":
+
+            message =
+              "Email or password is incorrect.";
+
+            break;
+
+
+          case "auth/email-already-in-use":
+
+            message =
+              "This email is already registered.";
+
+            break;
+
+
+          case "auth/weak-password":
+
+            message =
+              "Password must be at least 6 characters.";
+
+            break;
+
+
+          case "auth/invalid-email":
+
+            message =
+              "Enter a valid email.";
+
+            break;
+
+
+          case "auth/api-key-not-valid":
+
+            message =
+              "Firebase API key is invalid.";
+
+            break;
+
+
+          case "auth/network-request-failed":
+
+            message =
+              "Network connection problem.";
+
+            break;
+
+
+          default:
+
+            message =
+              error.message ||
+              "Authentication failed.";
+
+        }
 
 
         toast(
-          "Account created successfully."
+          message,
+          "Authentication"
         );
 
-      } else {
 
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+      } finally {
 
-        toast(
-          "Login successful."
-        );
+        if (submit) {
 
-      }
+          submit.disabled = false;
 
+          submit.textContent =
+            authMode === "login"
+              ? "Login"
+              : "Create Account";
 
-      closeM("authModal");
-
-      authForm.reset();
-
-
-    } catch (error) {
-
-      console.error(
-        "AUTH ERROR:",
-        error
-      );
-
-      let message = "Login failed.";
-
-
-      if (
-        error.code ===
-        "auth/invalid-credential"
-      ) {
-
-        message =
-          "Email or password is incorrect.";
+        }
 
       }
-
-
-      if (
-        error.code ===
-        "auth/email-already-in-use"
-      ) {
-
-        message =
-          "This email is already registered.";
-
-      }
-
-
-      if (
-        error.code ===
-        "auth/weak-password"
-      ) {
-
-        message =
-          "Password must be at least 6 characters.";
-
-      }
-
-
-      if (
-        error.code ===
-        "auth/invalid-email"
-      ) {
-
-        message =
-          "Enter a valid email.";
-
-      }
-
-
-      if (
-        error.code ===
-        "auth/api-key-not-valid"
-      ) {
-
-        message =
-          "Firebase API key is invalid.";
-
-      }
-
-
-      if (
-        error.code ===
-        "auth/network-request-failed"
-      ) {
-
-        message =
-          "Network connection problem.";
-
-      }
-
-
-      toast(message);
 
     }
-
-  });
+  );
 
 }
 
@@ -463,7 +632,8 @@ if (authForm) {
 // FORGOT PASSWORD
 // =====================================================
 
-const forgotPassword = $("#forgotPassword");
+const forgotPassword =
+  $("#forgotPassword");
 
 if (forgotPassword) {
 
@@ -487,7 +657,8 @@ if (forgotPassword) {
         );
 
         toast(
-          "Password reset email sent."
+          "Password reset email sent.",
+          "Check your email"
         );
 
       } catch (error) {
@@ -498,46 +669,7 @@ if (forgotPassword) {
         );
 
         toast(
-          "Could not send reset email."
-        );
-
-      }
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// LOGOUT
-// =====================================================
-
-const logoutButton = $("#logoutButton");
-
-if (logoutButton) {
-
-  logoutButton.addEventListener(
-    "click",
-    async () => {
-
-      try {
-
-        await signOut(auth);
-
-        closeM("profileModal");
-
-        toast("Logged out.");
-
-      } catch (error) {
-
-        console.error(
-          "LOGOUT ERROR:",
-          error
-        );
-
-        toast(
-          "Logout failed."
+          "Unable to send reset email."
         );
 
       }
@@ -558,130 +690,19 @@ onAuthStateChanged(
 
     currentUser = user;
 
-
-    const profileButton =
-      $("#profileButton");
-
-    const mobileProfile =
-      $("#mobileProfile");
-
-    const chatsNav =
-      $("#chatsNav");
-
-    const mobileChats =
-      $("#mobileChats");
-
-    const authBtn =
-      $("#authButton");
-
-    const mobileAuthBtn =
-      $("#mobileAuth");
-
-
     if (user) {
-
-      if (authBtn) {
-
-        authBtn.textContent =
-          "My Account";
-
-      }
-
-
-      if (mobileAuthBtn) {
-
-        mobileAuthBtn.textContent =
-          "My Account";
-
-      }
-
-
-      if (profileButton) {
-
-        profileButton.style.display =
-          "inline-block";
-
-      }
-
-
-      if (mobileProfile) {
-
-        mobileProfile.style.display =
-          "block";
-
-      }
-
-
-      if (chatsNav) {
-
-        chatsNav.style.display =
-          "inline-block";
-
-      }
-
-
-      if (mobileChats) {
-
-        mobileChats.style.display =
-          "block";
-
-      }
-
 
       await loadProfile();
 
+      updateLoggedInUI();
 
     } else {
 
-      if (authBtn) {
+      currentProfile = {};
 
-        authBtn.textContent =
-          "Login / Sign up";
-
-      }
-
-
-      if (mobileAuthBtn) {
-
-        mobileAuthBtn.textContent =
-          "Login / Sign up";
-
-      }
-
-
-      if (profileButton) {
-
-        profileButton.style.display =
-          "none";
-
-      }
-
-
-      if (mobileProfile) {
-
-        mobileProfile.style.display =
-          "none";
-
-      }
-
-
-      if (chatsNav) {
-
-        chatsNav.style.display =
-          "none";
-
-      }
-
-
-      if (mobileChats) {
-
-        mobileChats.style.display =
-          "none";
-
-      }
+      updateLoggedOutUI();
 
     }
-
 
     await loadJobs();
 
@@ -690,7 +711,89 @@ onAuthStateChanged(
 
 
 // =====================================================
-// PROFILE
+// LOGGED IN UI
+// =====================================================
+
+function updateLoggedInUI() {
+
+  const loginBtn =
+    $("#loginBtn");
+
+  if (loginBtn) {
+    loginBtn.textContent =
+      "My Account";
+  }
+
+  const navAccount =
+    $("#navAccount");
+
+  if (navAccount) {
+    navAccount.style.display =
+      "inline-flex";
+  }
+
+  const navChats =
+    $("#navChats");
+
+  if (navChats) {
+    navChats.style.display =
+      "inline-flex";
+  }
+
+  const mNavChats =
+    $("#mNavChats");
+
+  if (mNavChats) {
+    mNavChats.style.display =
+      "block";
+  }
+
+}
+
+
+// =====================================================
+// LOGGED OUT UI
+// =====================================================
+
+function updateLoggedOutUI() {
+
+  const loginBtn =
+    $("#loginBtn");
+
+  if (loginBtn) {
+    loginBtn.textContent =
+      "Login";
+  }
+
+  const navChats =
+    $("#navChats");
+
+  if (navChats) {
+    navChats.style.display =
+      "none";
+  }
+
+  const navAccount =
+    $("#navAccount");
+
+  if (navAccount) {
+    navAccount.style.display =
+      "none";
+  }
+
+  const mNavChats =
+    $("#mNavChats");
+
+  if (mNavChats) {
+    mNavChats.style.display =
+      "none";
+  }
+
+}
+
+
+// =====================================================
+// PROFILE LOAD
 // =====================================================
 
 async function loadProfile() {
@@ -712,46 +815,43 @@ async function loadProfile() {
       await getDoc(profileRef);
 
 
-    if (!snapshot.exists()) {
+    if (snapshot.exists()) {
 
-      currentProfile = {};
+      currentProfile =
+        snapshot.data();
 
-      return;
+    } else {
+
+      currentProfile = {
+        uid:
+          currentUser.uid,
+
+        email:
+          currentUser.email || "",
+
+        name:
+          "",
+
+        role:
+          "Freelancer",
+
+        area:
+          "",
+
+        skills:
+          "",
+
+        about:
+          "",
+
+        contact:
+          ""
+      };
 
     }
 
 
-    currentProfile =
-      snapshot.data();
-
-
-    const form =
-      $("#profileForm");
-
-    if (!form) return;
-
-
-    Object.entries(
-      currentProfile
-    ).forEach(([key, value]) => {
-
-      const input =
-        form.querySelector(
-          `[name="${key}"]`
-        );
-
-
-      if (
-        input &&
-        value !== null &&
-        value !== undefined
-      ) {
-
-        input.value = value;
-
-      }
-
-    });
+    fillProfileForm();
 
 
   } catch (error) {
@@ -767,7 +867,75 @@ async function loadProfile() {
 
 
 // =====================================================
-// SAVE PROFILE
+// FILL PROFILE
+// =====================================================
+
+function fillProfileForm() {
+
+  const fields = {
+
+    name:
+      currentProfile.name || "",
+
+    role:
+      currentProfile.role || "Freelancer",
+
+    area:
+      currentProfile.area || "",
+
+    skills:
+      currentProfile.skills || "",
+
+    about:
+      currentProfile.about || "",
+
+    contact:
+      currentProfile.contact || ""
+
+  };
+
+
+  const mapping = {
+
+    name:
+      "#profileNameInput",
+
+    role:
+      "#profileRoleInput",
+
+    area:
+      "#profileArea",
+
+    skills:
+      "#profileSkills",
+
+    about:
+      "#profileAbout",
+
+    contact:
+      "#profileContact"
+
+  };
+
+
+  Object.entries(fields).forEach(
+    ([key, value]) => {
+
+      const input =
+        $(mapping[key]);
+
+      if (input) {
+        input.value = value;
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// PROFILE FORM
 // =====================================================
 
 const profileForm =
@@ -784,22 +952,58 @@ if (profileForm) {
 
       if (!currentUser) {
 
-        setAuthMode("login");
-        openM("authModal");
-
-        toast(
-          "Login first."
-        );
+        openLogin();
 
         return;
 
       }
 
 
-      const data =
-        Object.fromEntries(
-          new FormData(profileForm)
-        );
+      const data = {
+
+        name:
+          getField(
+            profileForm,
+            "name"
+          ),
+
+        role:
+          getField(
+            profileForm,
+            "role"
+          ),
+
+        area:
+          getField(
+            profileForm,
+            "area"
+          ),
+
+        skills:
+          getField(
+            profileForm,
+            "skills"
+          ),
+
+        about:
+          getField(
+            profileForm,
+            "about"
+          ),
+
+        contact:
+          getField(
+            profileForm,
+            "contact"
+          ),
+
+        email:
+          currentUser.email || "",
+
+        updatedAt:
+          serverTimestamp()
+
+      };
 
 
       try {
@@ -810,13 +1014,7 @@ if (profileForm) {
             "users",
             currentUser.uid
           ),
-          {
-            ...data,
-            email:
-              currentUser.email || "",
-            updatedAt:
-              serverTimestamp()
-          },
+          data,
           {
             merge: true
           }
@@ -829,13 +1027,14 @@ if (profileForm) {
         };
 
 
-        closeM(
+        closeModal(
           "profileModal"
         );
 
 
         toast(
-          "Profile saved."
+          "Profile saved successfully!",
+          "Profile"
         );
 
 
@@ -848,7 +1047,49 @@ if (profileForm) {
 
         toast(
           "Profile save failed: " +
-          (error.code || "unknown error")
+          (error.code || "unknown")
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+const logoutBtn =
+  $("#logoutBtn");
+
+if (logoutBtn) {
+
+  logoutBtn.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await signOut(auth);
+
+        closeAllModals();
+
+        toast(
+          "Logged out successfully."
+        );
+
+      } catch (error) {
+
+        console.error(
+          "LOGOUT ERROR:",
+          error
+        );
+
+        toast(
+          "Logout failed."
         );
 
       }
@@ -867,30 +1108,68 @@ async function loadJobs() {
 
   try {
 
-    const q =
-      query(
-        collection(
-          db,
-          "jobs"
-        ),
-        orderBy(
-          "createdAt",
-          "desc"
-        )
+    let snapshot;
+
+
+    try {
+
+      const q =
+        query(
+          collection(
+            db,
+            "jobs"
+          ),
+          orderBy(
+            "createdAt",
+            "desc"
+          )
+        );
+
+      snapshot =
+        await getDocs(q);
+
+    } catch (orderError) {
+
+      console.warn(
+        "Ordered jobs query failed. Using fallback.",
+        orderError
       );
 
+      snapshot =
+        await getDocs(
+          collection(
+            db,
+            "jobs"
+          )
+        );
 
-    const snapshot =
-      await getDocs(q);
+    }
 
 
     jobs =
       snapshot.docs.map(
         (item) => ({
-          id: item.id,
+          id:
+            item.id,
+
           ...item.data()
         })
       );
+
+
+    jobs.sort(
+      (a, b) => {
+
+        const aTime =
+          a.createdAt?.seconds || 0;
+
+        const bTime =
+          b.createdAt?.seconds || 0;
+
+        return bTime - aTime;
+
+      }
+    );
 
 
     renderJobs();
@@ -899,51 +1178,28 @@ async function loadJobs() {
   } catch (error) {
 
     console.error(
-      "JOB LOAD ERROR:",
+      "LOAD JOBS ERROR:",
       error
     );
 
+    jobs = [];
 
-    // Fallback without orderBy
-    try {
+    renderJobs();
 
-      const snapshot =
-        await getDocs(
-          collection(
-            db,
-            "jobs"
-          )
-        );
-
-
-      jobs =
-        snapshot.docs.map(
-          (item) => ({
-            id: item.id,
-            ...item.data()
-          })
-        );
-
-
-      renderJobs();
-
-
-    } catch (secondError) {
-
-      console.error(
-        "JOB FALLBACK ERROR:",
-        secondError
-      );
-
-      toast(
-        "Unable to load jobs."
-      );
-
-    }
+    toast(
+      "Unable to load jobs."
+    );
 
   }
 
 }
+
+
+// =====================================================
+// JOB FILTER STATE
+// =====================================================
+
+let activeCategory = "All";
 
 
 // =====================================================
@@ -953,201 +1209,98 @@ async function loadJobs() {
 function renderJobs() {
 
   const grid =
-    $("#jobsGrid");
+    $("#jobList");
 
   if (!grid) return;
 
 
   const search =
     (
-      $("#search")?.value ||
+      $("#searchInput")?.value ||
       ""
     )
       .toLowerCase()
       .trim();
 
 
-  const area =
-    $("#area")?.value ||
-    "";
+  const location =
+    (
+      $("#locationInput")?.value ||
+      ""
+    )
+      .toLowerCase()
+      .trim();
 
 
-  const category =
-    $("#category")?.value ||
-    "";
-
-
-  const sort =
-    $("#sort")?.value ||
-    "new";
-
-
-  let list =
+  let filtered =
     jobs.filter((job) => {
 
-      const text =
+      const searchable =
         `
         ${job.title || ""}
         ${job.description || ""}
         ${job.category || ""}
         ${job.area || ""}
+        ${job.contact || ""}
         `
           .toLowerCase();
 
 
+      const matchesSearch =
+        !search ||
+        searchable.includes(search);
+
+
+      const matchesLocation =
+        !location ||
+        String(
+          job.area || ""
+        )
+          .toLowerCase()
+          .includes(location);
+
+
+      const matchesCategory =
+        activeCategory === "All" ||
+        !activeCategory ||
+        String(
+          job.category || ""
+        ).toLowerCase() ===
+        activeCategory.toLowerCase();
+
+
       return (
-        (!search ||
-          text.includes(search)) &&
-
-        (!area ||
-          job.area === area) &&
-
-        (!category ||
-          job.category === category)
+        matchesSearch &&
+        matchesLocation &&
+        matchesCategory
       );
 
     });
 
 
-  if (sort === "budget") {
+  grid.innerHTML = "";
 
-    list.sort(
-      (a, b) =>
-        Number(b.budget || 0) -
-        Number(a.budget || 0)
-    );
+
+  if (!filtered.length) {
+
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔎</div>
+        <h3>No jobs found</h3>
+        <p>Try another search or category.</p>
+      </div>
+    `;
 
   } else {
 
-    list.sort((a, b) => {
+    filtered.forEach((job) => {
 
-      const aTime =
-        a.createdAt?.seconds || 0;
-
-      const bTime =
-        b.createdAt?.seconds || 0;
-
-      return bTime - aTime;
+      grid.insertAdjacentHTML(
+        "beforeend",
+        createJobCard(job)
+      );
 
     });
-
-  }
-
-
-  grid.innerHTML =
-    list.map((job) => {
-
-      const budget =
-        Number(
-          job.budget || 0
-        ).toLocaleString(
-          "en-IN"
-        );
-
-
-      const isOwner =
-        currentUser &&
-        job.ownerId ===
-        currentUser.uid;
-
-
-      return `
-        <article class="job">
-
-          <div class="jobtop">
-
-            <span class="tag">
-              ${esc(
-                job.category ||
-                "Other"
-              )}
-            </span>
-
-            <span class="budget">
-              ₹${budget}
-            </span>
-
-          </div>
-
-
-          <h3>
-            ${esc(
-              job.title ||
-              "Untitled job"
-            )}
-          </h3>
-
-
-          <div class="desc">
-            ${esc(
-              job.description ||
-              ""
-            )}
-          </div>
-
-
-          <div class="meta">
-            📍 ${esc(
-              job.area ||
-              "Local"
-            )}
-          </div>
-
-
-          <div class="job-actions">
-
-            ${
-              isOwner
-                ? `
-                  <button
-                    class="contact"
-                    onclick="viewApplications('${job.id}')"
-                  >
-                    Applications
-                  </button>
-                `
-                : `
-                  <button
-                    class="contact"
-                    onclick="applyToJob('${job.id}')"
-                  >
-                    Apply for Job
-                  </button>
-
-                  <button
-                    class="contact"
-                    onclick="chatFromJob(
-                      '${job.id}',
-                      '${encodeURIComponent(
-                        job.title || ""
-                      )}',
-                      '${job.ownerId || ""}'
-                    )"
-                  >
-                    Chat
-                  </button>
-                `
-            }
-
-          </div>
-
-        </article>
-      `;
-
-    })
-    .join("");
-
-
-  const empty =
-    $("#empty");
-
-
-  if (empty) {
-
-    empty.classList.toggle(
-      "hidden",
-      list.length > 0
-    );
 
   }
 
@@ -1155,77 +1308,266 @@ function renderJobs() {
   const count =
     $("#jobCount");
 
-
   if (count) {
-
     count.textContent =
       jobs.length;
-
   }
 
 }
 
 
 // =====================================================
-// FILTERS
+// JOB CARD
 // =====================================================
 
-[
-  "search",
-  "area",
-  "category",
-  "sort"
-].forEach((id) => {
+function createJobCard(job) {
 
-  const element =
-    $("#" + id);
-
-  if (!element) return;
+  const budget =
+    Number(
+      job.budget || 0
+    ).toLocaleString(
+      "en-IN"
+    );
 
 
-  element.addEventListener(
+  const isOwner =
+    currentUser &&
+    job.ownerId ===
+    currentUser.uid;
+
+
+  const category =
+    esc(
+      job.category ||
+      "Other"
+    );
+
+
+  const title =
+    esc(
+      job.title ||
+      "Untitled Job"
+    );
+
+
+  const description =
+    esc(
+      job.description ||
+      "No description provided."
+    );
+
+
+  const area =
+    esc(
+      job.area ||
+      "Location not specified"
+    );
+
+
+  const jobId =
+    encodeURIComponent(
+      job.id
+    );
+
+
+  return `
+    <article class="job-card">
+
+      <div class="job-card-top">
+
+        <span class="job-category">
+          ${category}
+        </span>
+
+        <span class="job-budget">
+          ₹${budget}
+        </span>
+
+      </div>
+
+
+      <h3 class="job-title">
+        ${title}
+      </h3>
+
+
+      <p class="job-description">
+        ${description}
+      </p>
+
+
+      <div class="job-location">
+        📍 ${area}
+      </div>
+
+
+      ${
+        job.contact
+          ? `
+            <div class="job-contact">
+              📞 ${esc(job.contact)}
+            </div>
+          `
+          : ""
+      }
+
+
+      <div class="job-actions">
+
+        ${
+          isOwner
+            ? `
+              <button
+                class="btn primary"
+                onclick="viewApplications('${jobId}')"
+              >
+                👥 Applications
+              </button>
+            `
+            : `
+              <button
+                class="btn primary"
+                onclick="applyToJob('${jobId}')"
+              >
+                Apply Now
+              </button>
+
+              <button
+                class="btn secondary"
+                onclick="chatFromJob(
+                  '${jobId}',
+                  '${encodeURIComponent(job.title || "Job")}',
+                  '${safeId(job.ownerId)}'
+                )"
+              >
+                💬 Chat
+              </button>
+            `
+        }
+
+      </div>
+
+    </article>
+  `;
+
+}
+
+
+// =====================================================
+// SEARCH
+// =====================================================
+
+const searchInput =
+  $("#searchInput");
+
+const locationInput =
+  $("#locationInput");
+
+const searchBtn =
+  $("#searchBtn");
+
+if (searchInput) {
+
+  searchInput.addEventListener(
     "input",
     renderJobs
   );
 
+}
 
-  element.addEventListener(
-    "change",
+if (locationInput) {
+
+  locationInput.addEventListener(
+    "input",
     renderJobs
   );
 
-});
+}
+
+if (searchBtn) {
+
+  searchBtn.addEventListener(
+    "click",
+    () => {
+
+      renderJobs();
+
+      $("#jobsSection")
+        ?.scrollIntoView({
+          behavior: "smooth"
+        });
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// REFRESH JOBS
+// =====================================================
+
+const refreshJobs =
+  $("#refreshJobs");
+
+if (refreshJobs) {
+
+  refreshJobs.addEventListener(
+    "click",
+    async () => {
+
+      refreshJobs.disabled = true;
+
+      await loadJobs();
+
+      refreshJobs.disabled = false;
+
+      toast(
+        "Jobs refreshed."
+      );
+
+    }
+  );
+
+}
 
 
 // =====================================================
 // CATEGORY BUTTONS
 // =====================================================
 
-document
-  .querySelectorAll("[data-cat]")
-  .forEach((button) => {
+$$("[data-category]").forEach(
+  (button) => {
 
     button.addEventListener(
       "click",
       () => {
 
-        const category =
-          $("#category");
+        activeCategory =
+          button.dataset.category ||
+          "All";
 
 
-        if (category) {
+        $$("[data-category]").forEach(
+          (item) => {
 
-          category.value =
-            button.dataset.cat;
+            item.classList.remove(
+              "active"
+            );
 
-        }
+          }
+        );
+
+
+        button.classList.add(
+          "active"
+        );
 
 
         renderJobs();
 
 
-        document
-          .getElementById("jobs")
+        $("#jobsSection")
           ?.scrollIntoView({
             behavior: "smooth"
           });
@@ -1233,11 +1575,91 @@ document
       }
     );
 
-  });
+  }
+);
 
 
 // =====================================================
 // POST JOB
+// =====================================================
+
+function openPostJob() {
+
+  if (!currentUser) {
+
+    setAuthMode("login");
+
+    openModal(
+      "authModal"
+    );
+
+    toast(
+      "Login first to post a job."
+    );
+
+    return;
+
+  }
+
+
+  openModal(
+    "postJobModal"
+  );
+
+}
+
+
+const heroPostJob =
+  $("#heroPostJob");
+
+const ctaPostJob =
+  $("#ctaPostJob");
+
+const navPost =
+  $("#navPost");
+
+if (heroPostJob) {
+
+  heroPostJob.addEventListener(
+    "click",
+    openPostJob
+  );
+
+}
+
+if (ctaPostJob) {
+
+  ctaPostJob.addEventListener(
+    "click",
+    openPostJob
+  );
+
+}
+
+if (navPost) {
+
+  navPost.addEventListener(
+    "click",
+    openPostJob
+  );
+
+}
+
+const mNavPost =
+  $("#mNavPost");
+
+if (mNavPost) {
+
+  mNavPost.addEventListener(
+    "click",
+    openPostJob
+  );
+
+}
+
+
+// =====================================================
+// POST JOB FORM
 // =====================================================
 
 const jobForm =
@@ -1254,11 +1676,67 @@ if (jobForm) {
 
       if (!currentUser) {
 
-        setAuthMode("login");
-        openM("authModal");
+        openLogin();
+
+        return;
+
+      }
+
+
+      const title =
+        getField(
+          jobForm,
+          "title"
+        );
+
+      const category =
+        getField(
+          jobForm,
+          "category"
+        );
+
+      const budget =
+        Number(
+          getField(
+            jobForm,
+            "budget"
+          ) || 0
+        );
+
+      const area =
+        getField(
+          jobForm,
+          "area"
+        );
+
+      const description =
+        getField(
+          jobForm,
+          "description"
+        );
+
+      const contact =
+        getField(
+          jobForm,
+          "contact"
+        );
+
+      const contactValue =
+        getField(
+          jobForm,
+          "contactValue"
+        );
+
+
+      if (
+        !title ||
+        !category ||
+        !area ||
+        !description
+      ) {
 
         toast(
-          "Login first to post a job."
+          "Please fill all required fields."
         );
 
         return;
@@ -1266,28 +1744,14 @@ if (jobForm) {
       }
 
 
-      const data =
-        Object.fromEntries(
-          new FormData(jobForm)
-        );
+      const submit =
+        $("#postJobSubmit");
 
-
-      data.budget =
-        Number(
-          data.budget || 0
-        );
-
-
-      data.ownerId =
-        currentUser.uid;
-
-
-      data.ownerEmail =
-        currentUser.email || "";
-
-
-      data.createdAt =
-        serverTimestamp();
+      if (submit) {
+        submit.disabled = true;
+        submit.textContent =
+          "Publishing...";
+      }
 
 
       try {
@@ -1297,24 +1761,60 @@ if (jobForm) {
             db,
             "jobs"
           ),
-          data
+          {
+            title:
+              title,
+
+            category:
+              category,
+
+            budget:
+              budget,
+
+            area:
+              area,
+
+            description:
+              description,
+
+            contact:
+              contact,
+
+            contactValue:
+              contactValue,
+
+            ownerId:
+              currentUser.uid,
+
+            ownerEmail:
+              currentUser.email || "",
+
+            createdAt:
+              serverTimestamp()
+          }
         );
 
 
         jobForm.reset();
 
-
-        closeM(
-          "postModal"
+        closeModal(
+          "postJobModal"
         );
 
 
         toast(
-          "Job published successfully."
+          "Job published successfully!",
+          "Job Posted"
         );
 
 
         await loadJobs();
+
+
+        $("#jobsSection")
+          ?.scrollIntoView({
+            behavior: "smooth"
+          });
 
 
       } catch (error) {
@@ -1324,11 +1824,21 @@ if (jobForm) {
           error
         );
 
-
         toast(
           "Unable to publish job: " +
           (error.code || "unknown error")
         );
+
+      } finally {
+
+        if (submit) {
+
+          submit.disabled = false;
+
+          submit.textContent =
+            "Publish Job";
+
+        }
 
       }
 
@@ -1339,24 +1849,25 @@ if (jobForm) {
 
 
 // =====================================================
-// APPLY FOR JOB
+// APPLY TO JOB
 // =====================================================
 
 window.applyToJob =
-  async function(jobId) {
+  async function(encodedJobId) {
 
     if (!currentUser) {
 
-      setAuthMode("login");
-      openM("authModal");
-
-      toast(
-        "Login first to apply."
-      );
+      openLogin();
 
       return;
 
     }
+
+
+    const jobId =
+      decodeURIComponent(
+        encodedJobId
+      );
 
 
     const job =
@@ -1393,12 +1904,6 @@ window.applyToJob =
 
     try {
 
-      /*
-       * Fixed application ID.
-       * This prevents the same user
-       * from applying twice to the same job.
-       */
-
       const applicationId =
         `${jobId}_${currentUser.uid}`;
 
@@ -1420,7 +1925,7 @@ window.applyToJob =
       if (existing.exists()) {
 
         toast(
-          "You already applied."
+          "You already applied to this job."
         );
 
         return;
@@ -1446,6 +1951,9 @@ window.applyToJob =
           applicantEmail:
             currentUser.email || "",
 
+          applicantName:
+            currentProfile.name || "",
+
           status:
             "pending",
 
@@ -1456,7 +1964,8 @@ window.applyToJob =
 
 
       toast(
-        "Application sent successfully."
+        "Application sent successfully!",
+        "Application"
       );
 
 
@@ -1466,7 +1975,6 @@ window.applyToJob =
         "APPLICATION ERROR:",
         error
       );
-
 
       toast(
         "Application failed: " +
@@ -1483,16 +1991,21 @@ window.applyToJob =
 // =====================================================
 
 window.viewApplications =
-  async function(jobId) {
+  async function(encodedJobId) {
 
     if (!currentUser) {
 
-      setAuthMode("login");
-      openM("authModal");
+      openLogin();
 
       return;
 
     }
+
+
+    const jobId =
+      decodeURIComponent(
+        encodedJobId
+      );
 
 
     const job =
@@ -1519,7 +2032,7 @@ window.viewApplications =
     ) {
 
       toast(
-        "Only the client can view applications."
+        "Only the job owner can view applications."
       );
 
       return;
@@ -1531,22 +2044,17 @@ window.viewApplications =
       $("#applicationsList");
 
 
-    if (!list) {
-
-      toast(
-        "Applications area not found."
-      );
-
-      return;
-
-    }
+    if (!list) return;
 
 
-    list.innerHTML =
-      "<p>Loading applications...</p>";
+    list.innerHTML = `
+      <div class="loading">
+        Loading applicants...
+      </div>
+    `;
 
 
-    openM(
+    openModal(
       "applicationsModal"
     );
 
@@ -1573,58 +2081,172 @@ window.viewApplications =
 
       if (snapshot.empty) {
 
-        list.innerHTML =
-          "<p>No applications yet.</p>";
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <h3>No applications yet</h3>
+            <p>Applicants will appear here.</p>
+          </div>
+        `;
 
         return;
 
       }
 
 
-      list.innerHTML =
-        snapshot.docs
-          .map((item) => {
+      const applications =
+        snapshot.docs.map(
+          (item) => ({
+            id:
+              item.id,
 
-            const application =
-              item.data();
-
-
-            return `
-              <div class="application-card">
-
-                <h3>
-                  ${esc(
-                    application.applicantEmail ||
-                    "Applicant"
-                  )}
-                </h3>
-
-                <p>
-                  Status:
-                  ${esc(
-                    application.status ||
-                    "pending"
-                  )}
-                </p>
-
-                <button
-                  class="contact"
-                  onclick="chatFromJob(
-                    '${jobId}',
-                    '${encodeURIComponent(
-                      job.title || ""
-                    )}',
-                    '${application.applicantId || ""}'
-                  )"
-                >
-                  Chat with Applicant
-                </button>
-
-              </div>
-            `;
-
+            ...item.data()
           })
-          .join("");
+        );
+
+
+      list.innerHTML = "";
+
+
+      for (
+        const application
+        of applications
+      ) {
+
+        let applicant =
+          null;
+
+
+        try {
+
+          const profileSnapshot =
+            await getDoc(
+              doc(
+                db,
+                "users",
+                application.applicantId
+              )
+            );
+
+
+          if (
+            profileSnapshot.exists()
+          ) {
+
+            applicant =
+              profileSnapshot.data();
+
+          }
+
+        } catch (profileError) {
+
+          console.error(
+            "APPLICANT PROFILE ERROR:",
+            profileError
+          );
+
+        }
+
+
+        const applicantName =
+          applicant?.name ||
+          application.applicantName ||
+          application.applicantEmail ||
+          "Applicant";
+
+
+        const applicantRole =
+          applicant?.role ||
+          "Freelancer";
+
+
+        const applicantArea =
+          applicant?.area ||
+          "Location not added";
+
+
+        const applicantSkills =
+          applicant?.skills ||
+          "Skills not added";
+
+
+        list.insertAdjacentHTML(
+          "beforeend",
+          `
+          <div class="application-card">
+
+            <div class="application-avatar">
+              ${esc(
+                applicantName
+                  .charAt(0)
+                  .toUpperCase()
+              )}
+            </div>
+
+            <div class="application-info">
+
+              <h3>
+                ${esc(
+                  applicantName
+                )}
+              </h3>
+
+              <p>
+                ${esc(
+                  applicantRole
+                )}
+              </p>
+
+              <p>
+                📍 ${esc(
+                  applicantArea
+                )}
+              </p>
+
+              <p>
+                🛠️ ${esc(
+                  applicantSkills
+                )}
+              </p>
+
+              <span class="status">
+                ${esc(
+                  application.status ||
+                  "pending"
+                )}
+              </span>
+
+            </div>
+
+            <div class="application-actions">
+
+              <button
+                class="btn secondary"
+                onclick="viewApplicantProfile(
+                  '${safeId(application.applicantId)}'
+                )"
+              >
+                View Profile
+              </button>
+
+              <button
+                class="btn primary"
+                onclick="chatFromJob(
+                  '${encodeURIComponent(jobId)}',
+                  '${encodeURIComponent(job.title || "Job")}',
+                  '${safeId(application.applicantId)}'
+                )"
+              >
+                💬 Chat
+              </button>
+
+            </div>
+
+          </div>
+          `
+        );
+
+      }
 
 
     } catch (error) {
@@ -1635,20 +2257,261 @@ window.viewApplications =
       );
 
 
-      list.innerHTML =
-        "<p>Unable to load applications.</p>";
+      list.innerHTML = `
+        <div class="empty-state">
+          <h3>Unable to load applications</h3>
+          <p>${esc(error.code || "Unknown error")}</p>
+        </div>
+      `;
 
+    }
+
+  };
+
+
+// =====================================================
+// APPLICANT PROFILE
+// =====================================================
+
+window.viewApplicantProfile =
+  async function(userId) {
+
+    if (!currentUser) {
+
+      openLogin();
+
+      return;
+
+    }
+
+
+    try {
+
+      const snapshot =
+        await getDoc(
+          doc(
+            db,
+            "users",
+            userId
+          )
+        );
+
+
+      if (!snapshot.exists()) {
+
+        toast(
+          "Applicant profile not found."
+        );
+
+        return;
+
+      }
+
+
+      const profile =
+        snapshot.data();
+
+
+      const name =
+        profile.name ||
+        "Applicant";
+
+
+      const avatar =
+        $("#applicantAvatar");
+
+      if (avatar) {
+
+        avatar.textContent =
+          name
+            .charAt(0)
+            .toUpperCase();
+
+      }
+
+
+      const role =
+        $("#applicantRole");
+
+      if (role) {
+
+        role.textContent =
+          profile.role ||
+          "Freelancer";
+
+      }
+
+
+      const nameEl =
+        $("#applicantName");
+
+      if (nameEl) {
+
+        nameEl.textContent =
+          name;
+
+      }
+
+
+      const area =
+        $("#applicantArea");
+
+      if (area) {
+
+        area.textContent =
+          profile.area ||
+          "Location not added";
+
+      }
+
+
+      const skills =
+        $("#applicantSkills");
+
+      if (skills) {
+
+        skills.textContent =
+          profile.skills ||
+          "Skills not added";
+
+      }
+
+
+      const about =
+        $("#applicantAbout");
+
+      if (about) {
+
+        about.textContent =
+          profile.about ||
+          "No about information.";
+
+      }
+
+
+      const contact =
+        $("#applicantContact");
+
+      if (contact) {
+
+        contact.textContent =
+          profile.contact ||
+          profile.email ||
+          "Contact not added";
+
+      }
+
+
+      window.currentApplicant =
+        profile;
+
+
+      window.currentApplicantId =
+        userId;
+
+
+      const chatButton =
+        $("#applicantChatBtn");
+
+      if (chatButton) {
+
+        chatButton.onclick =
+          async () => {
+
+            const job =
+              jobs.find(
+                (item) =>
+                  item.ownerId ===
+                  currentUser.uid
+              );
+
+
+            const jobId =
+              job?.id ||
+              window.currentChatJobId ||
+              "profile";
+
+
+            await window.chatFromJob(
+              jobId,
+              encodeURIComponent(
+                job?.title ||
+                "LocalWork"
+              ),
+              userId
+            );
+
+          };
+
+      }
+
+
+      const contactButton =
+        $("#applicantContactBtn");
+
+      if (contactButton) {
+
+        contactButton.onclick =
+          () => {
+
+            const value =
+              profile.contact ||
+              profile.email ||
+              "";
+
+            if (!value) {
+
+              toast(
+                "Applicant has not added contact details."
+              );
+
+              return;
+
+            }
+
+
+            if (
+              value.includes("@")
+            ) {
+
+              window.location.href =
+                `mailto:${value}`;
+
+            } else {
+
+              window.location.href =
+                `tel:${value}`;
+
+            }
+
+          };
+
+      }
+
+
+      openModal(
+        "applicantProfileModal"
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "APPLICANT PROFILE ERROR:",
+        error
+      );
 
       toast(
-        "Unable to load applications: " +
-        (error.code || "unknown error")
+        "Unable to open applicant profile."
       );
 
     }
 
   };
+
+
 // =====================================================
-// CREATE / GET CHAT - FIXED
+// ENSURE CHAT
 // =====================================================
 
 async function ensureChat(
@@ -1659,7 +2522,9 @@ async function ensureChat(
 
   if (!currentUser) {
 
-    toast("Login first.");
+    toast(
+      "Login first."
+    );
 
     return null;
 
@@ -1668,16 +2533,23 @@ async function ensureChat(
 
   if (!otherUserId) {
 
-    toast("User information unavailable.");
+    toast(
+      "User information unavailable."
+    );
 
     return null;
 
   }
 
 
-  if (otherUserId === currentUser.uid) {
+  if (
+    otherUserId ===
+    currentUser.uid
+  ) {
 
-    toast("You cannot chat with yourself.");
+    toast(
+      "You cannot chat with yourself."
+    );
 
     return null;
 
@@ -1694,26 +2566,18 @@ async function ensureChat(
     `${jobId}_${participants[0]}_${participants[1]}`;
 
 
-  const chatRef =
+  await setDoc(
     doc(
       db,
       "chats",
       chatId
-    );
-
-
-  // IMPORTANT:
-  // Do NOT use getDoc() here.
-  // setDoc() with merge works for both
-  // new and existing chat documents.
-
-  await setDoc(
-    chatRef,
+    ),
     {
-      jobId: jobId,
+      jobId:
+        jobId,
 
       jobTitle:
-        title || "Job",
+        title || "LocalWork Chat",
 
       participants:
         participants,
@@ -1738,41 +2602,42 @@ async function ensureChat(
 
 window.chatFromJob =
   async function(
-    jobId,
-    titleEncoded,
+    encodedJobId,
+    encodedTitle,
     otherUserId
   ) {
 
     if (!currentUser) {
 
-      setAuthMode("login");
-      openM("authModal");
-
-      toast(
-        "Login first to chat."
-      );
+      openLogin();
 
       return;
 
     }
 
 
-    let title = "Job";
+    const jobId =
+      decodeURIComponent(
+        encodedJobId || ""
+      );
+
+
+    let title =
+      "LocalWork Chat";
 
 
     try {
 
       title =
         decodeURIComponent(
-          titleEncoded || ""
-        ) || "Job";
+          encodedTitle || ""
+        ) ||
+        "LocalWork Chat";
 
-    } catch (error) {
+    } catch {
 
-      console.log(
-        "Title decode error:",
-        error
-      );
+      title =
+        "LocalWork Chat";
 
     }
 
@@ -1790,19 +2655,18 @@ window.chatFromJob =
       if (!chatId) return;
 
 
-      await openChat(
+      await window.openChat(
         chatId,
-        title
+        encodeURIComponent(title)
       );
 
 
     } catch (error) {
 
       console.error(
-        "CREATE CHAT ERROR:",
+        "CHAT CREATE ERROR:",
         error
       );
-
 
       toast(
         "Unable to open chat: " +
@@ -1816,70 +2680,82 @@ window.chatFromJob =
 
 // =====================================================
 // OPEN CHAT
-// IMPORTANT: GLOBAL FUNCTION
 // =====================================================
 
 window.openChat =
   async function(
     chatId,
-    titleEncoded
+    encodedTitle
   ) {
 
     if (!currentUser) {
 
-      setAuthMode("login");
-      openM("authModal");
+      openLogin();
 
       return;
 
     }
 
 
-    let title = "Chat";
+    let title =
+      "LocalWork Chat";
 
 
     try {
 
       title =
         decodeURIComponent(
-          titleEncoded || ""
-        ) || "Chat";
+          encodedTitle || ""
+        ) ||
+        "LocalWork Chat";
 
-    } catch (error) {
+    } catch {
 
-      console.log(
-        "Chat title decode error:",
-        error
-      );
+      title =
+        "LocalWork Chat";
 
     }
 
 
-    const titleElement =
-      $("#chatTitle");
+    window.currentChatId =
+      chatId;
 
 
-    if (titleElement) {
+    const chatTitle =
+      $("#chatUserName");
 
-      titleElement.textContent =
+    if (chatTitle) {
+
+      chatTitle.textContent =
         title;
 
     }
 
 
-    openM(
+    const chatJobTitle =
+      $("#chatJobTitle");
+
+    if (chatJobTitle) {
+
+      chatJobTitle.textContent =
+        title;
+
+    }
+
+
+    openModal(
       "chatModal"
     );
 
 
-    const messages =
-      $("#messages");
+    const messagesArea =
+      $("#messagesArea");
 
 
-    if (!messages) {
+    if (!messagesArea) {
 
       toast(
-        "Chat messages area not found."
+        "Messages area not found."
       );
 
       return;
@@ -1887,7 +2763,6 @@ window.openChat =
     }
 
 
-    // Remove old listener
     if (
       window.chatUnsubscribe
     ) {
@@ -1900,11 +2775,14 @@ window.openChat =
     }
 
 
-    messages.innerHTML =
-      "<p>Loading messages...</p>";
+    messagesArea.innerHTML = `
+      <div class="loading">
+        Loading messages...
+      </div>
+    `;
 
 
-    const q =
+    const messagesQuery =
       query(
         collection(
           db,
@@ -1921,25 +2799,25 @@ window.openChat =
 
     window.chatUnsubscribe =
       onSnapshot(
-        q,
+        messagesQuery,
         (snapshot) => {
 
           if (snapshot.empty) {
 
-            messages.innerHTML =
-              `
-                <div style="padding:20px;text-align:center;">
-                  No messages yet.<br>
-                  Start the conversation.
-                </div>
-              `;
+            messagesArea.innerHTML = `
+              <div class="empty-chat">
+                <div>💬</div>
+                <p>No messages yet.</p>
+                <small>Start the conversation.</small>
+              </div>
+            `;
 
             return;
 
           }
 
 
-          messages.innerHTML =
+          messagesArea.innerHTML =
             snapshot.docs
               .map((item) => {
 
@@ -1952,17 +2830,46 @@ window.openChat =
                   currentUser.uid;
 
 
+                const time =
+                  message.createdAt?.toDate
+                    ? message.createdAt
+                        .toDate()
+                        .toLocaleTimeString(
+                          [],
+                          {
+                            hour:
+                              "2-digit",
+                            minute:
+                              "2-digit"
+                          }
+                        )
+                    : "";
+
+
                 return `
                   <div
-                    class="chat-message ${
-                      mine
-                        ? "mine"
-                        : "other"
-                    }"
+                    class="
+                      chat-message
+                      ${mine ? "mine" : "other"}
+                    "
                   >
-                    ${esc(
-                      message.text || ""
-                    )}
+
+                    <div class="message-bubble">
+                      ${esc(
+                        message.text || ""
+                      )}
+                    </div>
+
+                    ${
+                      time
+                        ? `
+                          <small>
+                            ${esc(time)}
+                          </small>
+                        `
+                        : ""
+                    }
+
                   </div>
                 `;
 
@@ -1970,12 +2877,10 @@ window.openChat =
               .join("");
 
 
-          messages.scrollTop =
-            messages.scrollHeight;
+          messagesArea.scrollTop =
+            messagesArea.scrollHeight;
 
         },
-
-
         (error) => {
 
           console.error(
@@ -1983,14 +2888,11 @@ window.openChat =
             error
           );
 
-
-          messages.innerHTML =
-            `
-              <p>
-                Unable to load messages.
-              </p>
-            `;
-
+          messagesArea.innerHTML = `
+            <div class="empty-chat">
+              <p>Unable to load messages.</p>
+            </div>
+          `;
 
           toast(
             "Chat error: " +
@@ -1998,7 +2900,6 @@ window.openChat =
           );
 
         }
-
       );
 
 
@@ -2027,18 +2928,8 @@ window.openChat =
         event.preventDefault();
 
 
-        if (!currentUser) {
-
-          toast(
-            "Login required."
-          );
-
-          return;
-
-        }
-
-
         const input =
+          $("#messageInput") ||
           messageForm.querySelector(
             '[name="message"]'
           );
@@ -2108,6 +2999,8 @@ window.openChat =
 
           input.value = "";
 
+          input.focus();
+
 
         } catch (error) {
 
@@ -2115,7 +3008,6 @@ window.openChat =
             "SEND MESSAGE ERROR:",
             error
           );
-
 
           toast(
             "Message failed: " +
@@ -2137,6 +3029,8 @@ async function loadChats() {
 
   if (!currentUser) {
 
+    openLogin();
+
     return;
 
   }
@@ -2157,8 +3051,11 @@ async function loadChats() {
   }
 
 
-  list.innerHTML =
-    "<p>Loading chats...</p>";
+  list.innerHTML = `
+    <div class="loading">
+      Loading chats...
+    </div>
+  `;
 
 
   try {
@@ -2183,55 +3080,74 @@ async function loadChats() {
 
     if (snapshot.empty) {
 
-      list.innerHTML =
-        `
-          <p>
-            No chats yet.<br>
-            Open a job and start a chat.
-          </p>
-        `;
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          <h3>No chats yet</h3>
+          <p>Open a job and start chatting.</p>
+        </div>
+      `;
 
       return;
 
     }
 
 
-    list.innerHTML =
+    const chats =
       snapshot.docs
-        .map((item) => {
+        .map((item) => ({
+          id:
+            item.id,
 
-          const chat =
-            item.data();
+          ...item.data()
+        }))
+        .sort(
+          (a, b) =>
+            (b.updatedAt?.seconds || 0) -
+            (a.updatedAt?.seconds || 0)
+        );
 
+
+    list.innerHTML =
+      chats
+        .map((chat) => {
 
           return `
             <div class="chat-card">
 
-              <h3>
-                ${esc(
-                  chat.jobTitle ||
-                  "LocalWork Chat"
-                )}
-              </h3>
+              <div class="chat-card-avatar">
+                💬
+              </div>
 
-              <p>
-                ${esc(
-                  chat.lastMessage ||
-                  "No messages yet"
-                )}
-              </p>
+              <div class="chat-card-content">
+
+                <h3>
+                  ${esc(
+                    chat.jobTitle ||
+                    "LocalWork Chat"
+                  )}
+                </h3>
+
+                <p>
+                  ${esc(
+                    chat.lastMessage ||
+                    "No messages yet"
+                  )}
+                </p>
+
+              </div>
 
               <button
-                class="contact"
+                class="btn primary"
                 onclick="openChat(
-                  '${item.id}',
+                  '${safeId(chat.id)}',
                   '${encodeURIComponent(
                     chat.jobTitle ||
-                    "Chat"
+                    "LocalWork Chat"
                   )}'
                 )"
               >
-                Open Chat
+                Open
               </button>
 
             </div>
@@ -2249,8 +3165,11 @@ async function loadChats() {
     );
 
 
-    list.innerHTML =
-      "<p>Unable to load chats.</p>";
+    list.innerHTML = `
+      <div class="empty-state">
+        <h3>Unable to load chats</h3>
+      </div>
+    `;
 
 
     toast(
@@ -2264,57 +3183,103 @@ async function loadChats() {
 
 
 // =====================================================
-// CHAT BUTTONS
+// CHAT NAV
 // =====================================================
 
-const chatsNav =
-  $("#chatsNav");
+const navChats =
+  $("#navChats");
 
-const mobileChats =
-  $("#mobileChats");
+if (navChats) {
 
+  navChats.addEventListener(
+    "click",
+    async () => {
 
-async function chatsClick() {
+      if (!currentUser) {
 
-  if (!currentUser) {
+        openLogin();
 
-    setAuthMode("login");
-    openM("authModal");
+        return;
 
-    toast(
-      "Login first."
-    );
+      }
 
-    return;
+      await loadChats();
 
-  }
+      openModal(
+        "chatsModal"
+      );
 
-
-  await loadChats();
-
-
-  openM(
-    "chatsModal"
+    }
   );
 
 }
 
 
-if (chatsNav) {
+const mNavChats =
+  $("#mNavChats");
 
-  chatsNav.addEventListener(
+if (mNavChats) {
+
+  mNavChats.addEventListener(
     "click",
-    chatsClick
+    async () => {
+
+      if (!currentUser) {
+
+        openLogin();
+
+        return;
+
+      }
+
+      await loadChats();
+
+      openModal(
+        "chatsModal"
+      );
+
+    }
   );
 
 }
 
 
-if (mobileChats) {
+// =====================================================
+// CHAT BACK BUTTON
+// =====================================================
 
-  mobileChats.addEventListener(
+const chatBackBtn =
+  $("#chatBackBtn");
+
+if (chatBackBtn) {
+
+  chatBackBtn.addEventListener(
     "click",
-    chatsClick
+    () => {
+
+      if (
+        window.chatUnsubscribe
+      ) {
+
+        window.chatUnsubscribe();
+
+        window.chatUnsubscribe =
+          null;
+
+      }
+
+
+      closeModal(
+        "chatModal"
+      );
+
+      loadChats();
+
+      openModal(
+        "chatsModal"
+      );
+
+    }
   );
 
 }
@@ -2326,7 +3291,6 @@ if (mobileChats) {
 
 const chatModal =
   $("#chatModal");
-
 
 if (chatModal) {
 
@@ -2359,37 +3323,250 @@ if (chatModal) {
 
 
 // =====================================================
-// SCROLL BUTTONS
+// EMOJI BUTTON
 // =====================================================
 
-document
-  .querySelectorAll(
-    "[data-scroll]"
-  )
-  .forEach((button) => {
+const emojiBtn =
+  $("#emojiBtn");
 
-    button.addEventListener(
-      "click",
-      () => {
+if (emojiBtn) {
 
-        const target =
-          document.getElementById(
-            button.dataset.scroll
-          );
+  emojiBtn.addEventListener(
+    "click",
+    () => {
+
+      const input =
+        $("#messageInput");
+
+      if (!input) return;
 
 
-        if (target) {
+      const emojis = [
+        "😊",
+        "👍",
+        "❤️",
+        "😂",
+        "🔥",
+        "🙏",
+        "👋",
+        "✅"
+      ];
 
-          target.scrollIntoView({
-            behavior: "smooth"
-          });
 
-        }
+      const emoji =
+        emojis[
+          Math.floor(
+            Math.random() *
+            emojis.length
+          )
+        ];
+
+
+      input.value += emoji;
+
+      input.focus();
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// NAV JOBS
+// =====================================================
+
+const navJobs =
+  $("#navJobs");
+
+if (navJobs) {
+
+  navJobs.addEventListener(
+    "click",
+    () => {
+
+      $("#jobsSection")
+        ?.scrollIntoView({
+          behavior: "smooth"
+        });
+
+    }
+  );
+
+}
+
+
+const mNavJobs =
+  $("#mNavJobs");
+
+if (mNavJobs) {
+
+  mNavJobs.addEventListener(
+    "click",
+    () => {
+
+      $("#jobsSection")
+        ?.scrollIntoView({
+          behavior: "smooth"
+        });
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// HERO FIND JOBS
+// =====================================================
+
+const heroFindJobs =
+  $("#heroFindJobs");
+
+if (heroFindJobs) {
+
+  heroFindJobs.addEventListener(
+    "click",
+    () => {
+
+      $("#jobsSection")
+        ?.scrollIntoView({
+          behavior: "smooth"
+        });
+
+      $("#searchInput")
+        ?.focus();
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// BRAND HOME
+// =====================================================
+
+const brandHome =
+  $("#brandHome");
+
+if (brandHome) {
+
+  brandHome.addEventListener(
+    "click",
+    () => {
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// PROFILE NAV
+// =====================================================
+
+const navAccount =
+  $("#navAccount");
+
+if (navAccount) {
+
+  navAccount.addEventListener(
+    "click",
+    () => {
+
+      if (!currentUser) {
+
+        openLogin();
+
+        return;
 
       }
-    );
 
-  });
+      fillProfileForm();
+
+      openModal(
+        "profileModal"
+      );
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// TOGGLE PASSWORD
+// =====================================================
+
+const togglePassword =
+  $("#togglePassword");
+
+if (togglePassword) {
+
+  togglePassword.addEventListener(
+    "click",
+    () => {
+
+      const password =
+        $("#authPassword");
+
+      if (!password) return;
+
+
+      if (
+        password.type ===
+        "password"
+      ) {
+
+        password.type =
+          "text";
+
+        togglePassword.textContent =
+          "🙈";
+
+      } else {
+
+        password.type =
+          "password";
+
+        togglePassword.textContent =
+          "👁️";
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// TOAST CLOSE
+// =====================================================
+
+const toastClose =
+  $("#toastClose");
+
+if (toastClose) {
+
+  toastClose.addEventListener(
+    "click",
+    () => {
+
+      $("#toast")
+        ?.classList
+        .remove("show");
+
+    }
+  );
+
+}
 
 
 // =====================================================
@@ -2398,7 +3575,6 @@ document
 
 const year =
   $("#year");
-
 
 if (year) {
 
@@ -2409,12 +3585,38 @@ if (year) {
 
 
 // =====================================================
-// START
+// PAGE LOADER
+// =====================================================
+
+window.addEventListener(
+  "load",
+  () => {
+
+    const loader =
+      $("#pageLoader");
+
+    if (loader) {
+
+      setTimeout(() => {
+
+        loader.classList.add(
+          "hidden"
+        );
+
+      }, 500);
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// INITIAL
 // =====================================================
 
 setAuthMode("login");
 
-
 console.log(
-  "LocalWork V4 loaded successfully."
+  "LocalWork V5 Firebase loaded successfully."
 );
