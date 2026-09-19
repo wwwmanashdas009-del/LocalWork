@@ -1,74 +1,1019 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b1220">
-<meta name="description" content="LocalWork — a local marketplace for clients and freelancers.">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="manifest" href="manifest.webmanifest">
-<title>LocalWork — Local jobs, real connections</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="description" content="LocalWork - Find local jobs and skilled freelancers near you">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg">
+  <title>LocalWork — Local Jobs & Freelancers</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div class="bg-orb orb-a"></div><div class="bg-orb orb-b"></div>
-<header class="site-header">
-  <a class="brand" href="#top" aria-label="LocalWork home"><span class="brand-icon">LW</span><span>LocalWork</span><em>V4</em></a>
-  <nav class="desktop-nav">
-    <button data-scroll="jobs">Browse jobs</button>
-    <button data-open="postModal">Post a job</button>
-    <button data-open="chatsModal" id="chatsNav" class="ghost-nav" style="display:none">💬 Chats</button>
-    <button data-open="profileModal" id="profileButton" class="ghost-nav" style="display:none">My profile</button>
-    <button id="authButton" class="dark">Login / Sign up</button>
-  </nav>
-  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
-</header>
-<div class="mobile-menu" id="mobileMenu">
-  <button data-scroll="jobs">Browse jobs</button><button data-open="postModal">Post a job</button>
-  <button data-open="chatsModal" id="mobileChats" style="display:none">💬 Chats</button>
-  <button data-open="profileModal" id="mobileProfile" style="display:none">👤 My profile</button>
-  <button id="mobileAuth" class="dark">Login / Sign up</button>
-</div>
 
-<main id="top">
-<section class="hero">
-  <div class="hero-copy">
-    <span class="pill"><i class="pulse-dot"></i> Guwahati • Hyperlocal marketplace</span>
-    <h1>Find local work.<br><span>Build real connections.</span></h1>
-    <p>Hire trusted local talent or find your next project for web development, design, social media, Excel, video editing and more.</p>
-    <div class="hero-actions"><button class="dark big" data-open="postModal">＋ Post a job</button><button class="big" data-scroll="jobs">Explore jobs <span>→</span></button></div>
-    <div class="stats"><div><strong id="jobCount">0</strong><small>Live jobs</small></div><div><strong id="profileCount">0</strong><small>Signed in</small></div><div><strong>₹0</strong><small>Join fee</small></div></div>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="nav-container">
+
+      <a href="#" class="brand" id="brandHome">
+        <span class="brand-icon">LW</span>
+        <span class="brand-text">
+          <strong>LocalWork</strong>
+          <small>Work. Connect. Grow.</small>
+        </span>
+      </a>
+
+      <nav class="desktop-nav">
+        <button class="nav-link active" id="navJobs">🏠 Jobs</button>
+        <button class="nav-link" id="navPost">➕ Post Job</button>
+        <button class="nav-link" id="navChats">💬 Chats</button>
+        <button class="nav-link" id="navAccount">👤 My Account</button>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" id="mobileMenuBtn">☰</button>
+        <button class="login-btn" id="loginBtn">Login</button>
+      </div>
+
+    </div>
+
+    <div class="mobile-nav" id="mobileNav">
+      <button id="mNavJobs">🏠 Jobs</button>
+      <button id="mNavPost">➕ Post Job</button>
+      <button id="mNavChats">💬 Chats</button>
+      <button id="mNavAccount">👤 Account</button>
+    </div>
+  </header>
+
+
+  <!-- HERO -->
+  <main>
+
+    <section class="hero-section">
+
+      <div class="hero-content">
+
+        <div class="hero-badge">
+          <span class="pulse-dot"></span>
+          Your local work marketplace
+        </div>
+
+        <h1>
+          Find Work.
+          <span>Hire Talent.</span>
+          Grow Together.
+        </h1>
+
+        <p>
+          Discover local jobs, connect with skilled people,
+          and build opportunities right around you.
+        </p>
+
+        <div class="hero-buttons">
+          <button class="primary-btn" id="heroFindJobs">
+            🔎 Find Jobs
+          </button>
+
+          <button class="secondary-btn" id="heroPostJob">
+            🚀 Post a Job
+          </button>
+        </div>
+
+        <div class="hero-stats">
+          <div>
+            <strong id="jobCount">0+</strong>
+            <span>Jobs</span>
+          </div>
+
+          <div>
+            <strong>24/7</strong>
+            <span>Access</span>
+          </div>
+
+          <div>
+            <strong>100%</strong>
+            <span>Local</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hero-visual">
+
+        <div class="floating-card card-main">
+          <div class="mini-icon purple">💼</div>
+          <div>
+            <strong>Local Jobs</strong>
+            <small>Find opportunities nearby</small>
+          </div>
+        </div>
+
+        <div class="floating-card card-top">
+          <div class="avatar-gradient">👨‍💻</div>
+          <div>
+            <strong>Skilled Workers</strong>
+            <small>Ready to work</small>
+          </div>
+        </div>
+
+        <div class="floating-card card-bottom">
+          <span>✨</span>
+          <strong>Easy & Fast</strong>
+        </div>
+
+        <div class="hero-circle">
+          <span>LW</span>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- JOB SECTION -->
+    <section class="jobs-section" id="jobsSection">
+
+      <div class="section-heading">
+
+        <div>
+          <span class="section-label">EXPLORE OPPORTUNITIES</span>
+          <h2>Find Your Next <span>Job</span></h2>
+          <p>Browse jobs posted by people and businesses near you.</p>
+        </div>
+
+        <button class="outline-btn" id="refreshJobs">
+          ↻ Refresh
+        </button>
+
+      </div>
+
+
+      <!-- SEARCH -->
+      <div class="search-panel">
+
+        <div class="search-box">
+          <span>🔎</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search jobs, skills, services..."
+          >
+        </div>
+
+        <div class="location-box">
+          <span>📍</span>
+          <input
+            type="text"
+            id="locationInput"
+            placeholder="Location / area"
+          >
+        </div>
+
+        <button class="search-btn" id="searchBtn">
+          Search
+        </button>
+
+      </div>
+
+
+      <!-- CATEGORIES -->
+      <div class="category-row" id="categoryButtons">
+
+        <button class="category-btn active" data-category="all">
+          🔥 All
+        </button>
+
+        <button class="category-btn" data-category="delivery">
+          🛵 Delivery
+        </button>
+
+        <button class="category-btn" data-category="cleaning">
+          🧹 Cleaning
+        </button>
+
+        <button class="category-btn" data-category="repair">
+          🔧 Repair
+        </button>
+
+        <button class="category-btn" data-category="design">
+          🎨 Design
+        </button>
+
+        <button class="category-btn" data-category="teaching">
+          📚 Teaching
+        </button>
+
+        <button class="category-btn" data-category="construction">
+          🏗️ Construction
+        </button>
+
+        <button class="category-btn" data-category="other">
+          ✨ Other
+        </button>
+
+      </div>
+
+
+      <!-- JOB GRID -->
+      <div class="job-grid" id="jobList">
+
+        <div class="loading-card">
+          <div class="loading-spinner"></div>
+          <h3>Loading jobs...</h3>
+          <p>Finding the latest local opportunities.</p>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- CTA -->
+    <section class="cta-section">
+
+      <div class="cta-content">
+
+        <span class="cta-icon">🚀</span>
+
+        <div>
+          <h2>Have a job to offer?</h2>
+          <p>Post your requirement and connect with skilled people.</p>
+        </div>
+
+        <button class="white-btn" id="ctaPostJob">
+          Post a Job →
+        </button>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- AUTH MODAL -->
+  <div class="modal" id="authModal">
+
+    <div class="modal-box auth-box">
+
+      <button class="modal-close" data-close="authModal">×</button>
+
+      <div class="modal-icon">🔐</div>
+
+      <h2 id="authTitle">Welcome Back</h2>
+      <p id="authSubtitle">Login to continue with LocalWork</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab">Login</button>
+        <button class="auth-tab" id="signupTab">Create Account</button>
+      </div>
+
+      <form id="authForm">
+
+        <div class="form-group signup-only">
+          <label>Full Name</label>
+          <input
+            type="text"
+            id="authName"
+            placeholder="Your name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            id="authEmail"
+            placeholder="you@example.com"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+
+          <div class="password-wrap">
+            <input
+              type="password"
+              id="authPassword"
+              placeholder="••••••••"
+              required
+            >
+            <button type="button" id="togglePassword">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group signup-only">
+          <label>Role</label>
+
+          <select id="authRole">
+            <option value="freelancer">Freelancer / Worker</option>
+            <option value="client">Client / Employer</option>
+          </select>
+        </div>
+
+        <button class="primary-btn full-btn" type="submit" id="authSubmit">
+          Login
+        </button>
+
+      </form>
+
+      <button class="forgot-btn" id="forgotPassword">
+        Forgot password?
+      </button>
+
+      <p class="auth-message" id="authMessage"></p>
+
+    </div>
+
   </div>
-  <div class="hero-card">
-    <div class="hero-card-top"><div><small>LOCAL DISCOVERY</small><b>Work around you</b></div><span>● Live</span></div>
-    <div class="map-preview"><span class="map-ring r1"></span><span class="map-ring r2"></span><span class="map-pin p1">◆</span><span class="map-pin p2">◆</span><span class="map-pin p3">◆</span><span class="map-pin p4">◆</span><div class="map-label">Guwahati</div></div>
-    <div class="trust-row"><span>⚡ Fast replies</span><span>🔒 Firebase secure</span></div>
+
+
+  <!-- POST JOB MODAL -->
+  <div class="modal" id="postJobModal">
+
+    <div class="modal-box large-modal">
+
+      <button class="modal-close" data-close="postJobModal">×</button>
+
+      <div class="modal-heading">
+        <div class="modal-icon">📢</div>
+
+        <div>
+          <h2>Post a New Job</h2>
+          <p>Tell people what work you need.</p>
+        </div>
+      </div>
+
+      <form id="jobForm">
+
+        <div class="form-grid">
+
+          <div class="form-group full">
+            <label>Job Title</label>
+            <input
+              type="text"
+              id="jobTitle"
+              placeholder="e.g. Need a graphic designer"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Category</label>
+
+            <select id="jobCategory" required>
+              <option value="">Select category</option>
+              <option value="delivery">Delivery</option>
+              <option value="cleaning">Cleaning</option>
+              <option value="repair">Repair</option>
+              <option value="design">Design</option>
+              <option value="teaching">Teaching</option>
+              <option value="construction">Construction</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Budget</label>
+
+            <div class="input-prefix">
+              <span>₹</span>
+              <input
+                type="text"
+                id="jobBudget"
+                placeholder="e.g. 1000"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Full Address / Location</label>
+
+            <div class="input-with-icon">
+              <span>📍</span>
+
+              <input
+                type="text"
+                id="jobArea"
+                name="area"
+                placeholder="Enter complete address or area"
+                required
+              >
+            </div>
+
+            <small class="field-help">
+              Enter the location manually so applicants know where the work is.
+            </small>
+          </div>
+
+          <div class="form-group full">
+            <label>Job Description</label>
+
+            <textarea
+              id="jobDescription"
+              rows="5"
+              placeholder="Explain the work, requirements, timing, etc."
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Contact Type</label>
+
+            <select id="jobContact">
+              <option value="phone">📞 Phone</option>
+              <option value="whatsapp">💬 WhatsApp</option>
+              <option value="email">✉️ Email</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Contact Details</label>
+
+            <input
+              type="text"
+              id="jobContactValue"
+              placeholder="Phone / WhatsApp / Email"
+              required
+            >
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="cancel-btn"
+            data-close="postJobModal"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-btn"
+            id="postJobSubmit"
+          >
+            🚀 Publish Job
+          </button>
+
+        </div>
+
+        <p class="form-message" id="jobMessage"></p>
+
+      </form>
+
+    </div>
+
   </div>
-</section>
 
-<section class="quick"><button data-cat="Web Development"><span>💻</span><b>Web Development</b><small>Websites & fixes</small></button><button data-cat="Social Media"><span>📱</span><b>Social Media</b><small>Posts & management</small></button><button data-cat="Design"><span>🎨</span><b>Design</b><small>Canva & graphics</small></button><button data-cat="Typing & Excel"><span>⌨️</span><b>Typing & Excel</b><small>Data & documents</small></button></section>
 
-<section id="jobs" class="section jobs-section">
-  <div class="sectionhead"><div><small>MARKETPLACE</small><h2>Find your next job</h2><p>Search local work, apply in one tap and chat with the client.</p></div><button class="dark" data-open="postModal">Post job</button></div>
-  <div class="filters"><div class="searchbox">⌕<input id="search" placeholder="Search jobs, skills or area…"></div><select id="area"><option value="">All areas</option><option>Guwahati</option><option>Dispur</option><option>Paltan Bazar</option><option>Maligaon</option><option>Six Mile</option><option>Pan Bazaar</option><option>Zoo Road</option><option>Basistha</option></select><select id="category"><option value="">All categories</option><option>Web Development</option><option>Social Media</option><option>Design</option><option>Typing & Excel</option><option>Video Editing</option><option>Other</option></select><select id="sort"><option value="new">Newest</option><option value="budget">Highest budget</option></select></div>
-  <div id="jobsGrid" class="grid"></div><div id="empty" class="empty hidden"><div>🔎</div><h3>No matching jobs</h3><p>Try another keyword, area or category.</p></div>
-</section>
+  <!-- PROFILE MODAL -->
+  <div class="modal" id="profileModal">
 
-<section class="section how-section"><div class="section-title"><small>HOW IT WORKS</small><h2>Simple local hiring</h2></div><div class="steps"><article><b>1</b><h3>Create a profile</h3><p>Tell clients what you can do and where you work.</p></article><article><b>2</b><h3>Post or apply</h3><p>Publish a job or apply to projects that fit your skills.</p></article><article><b>3</b><h3>Chat & connect</h3><p>Discuss the work directly and move forward together.</p></article></div></section>
-</main>
+    <div class="modal-box">
 
-<div id="postModal" class="modal"><div class="box"><button class="close" data-close>×</button><div class="modal-kicker">CLIENT</div><h2>Post a local job</h2><p>Reach freelancers who are looking for local work.</p><form id="jobForm"><label>Job title<input name="title" required maxlength="80" placeholder="Instagram post designer"></label><div class="two-col"><label>Category<select name="category"><option>Web Development</option><option>Social Media</option><option>Design</option><option>Typing & Excel</option><option>Video Editing</option><option>Other</option></select></label><label>Area<select name="area"><option>Guwahati</option><option>Dispur</option><option>Paltan Bazar</option><option>Maligaon</option><option>Six Mile</option><option>Pan Bazaar</option><option>Zoo Road</option><option>Basistha</option></select></label></div><label>Budget ₹<input name="budget" type="number" min="0" required placeholder="1000"></label><label>Description<textarea name="description" required maxlength="500" placeholder="Describe the work, deadline and requirements..."></textarea></label><div class="two-col"><label>Contact method<select name="contact"><option>WhatsApp</option><option>Phone</option><option>Instagram</option><option>Email</option></select></label><label>Your contact<input name="contactValue" required maxlength="100" placeholder="Number / @username / email"></label></div><button class="dark full">Publish job <span>→</span></button></form></div></div>
+      <button class="modal-close" data-close="profileModal">×</button>
 
-<div id="authModal" class="modal"><div class="box auth-box"><button class="close" data-close>×</button><div class="auth-logo">LW</div><h2 id="authTitle">Welcome back</h2><p id="authHint">Login to apply, post and chat.</p><form id="authForm"><label>Email<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label>Password<input name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters"></label><button class="dark full" id="authSubmit">Login</button></form><button id="authSwitch" class="link-btn">Create a new account</button><button id="logoutButton" class="full secondary-btn" style="display:none">Logout</button></div></div>
+      <div class="profile-cover"></div>
 
-<div id="profileModal" class="modal"><div class="box"><button class="close" data-close>×</button><div class="modal-kicker">PROFILE</div><h2>My profile</h2><p>Help local clients understand who you are.</p><form id="profileForm"><div class="two-col"><label>Name<input name="name" required placeholder="Your name"></label><label>Role<select name="role"><option>Freelancer</option><option>Client</option></select></label></div><label>Area<select name="area"><option>Guwahati</option><option>Dispur</option><option>Paltan Bazar</option><option>Maligaon</option><option>Six Mile</option><option>Pan Bazaar</option><option>Zoo Road</option><option>Basistha</option></select></label><label>Skills<input name="skills" placeholder="HTML, Canva, Excel"></label><label>About<textarea name="about" maxlength="500" placeholder="A short introduction..."></textarea></label><label>Contact<input name="contact" required placeholder="WhatsApp / phone / email"></label><button class="dark full">Save profile</button></form></div></div>
+      <div class="profile-avatar" id="profileAvatar">
+        👤
+      </div>
 
-<div id="applicationsModal" class="modal"><div class="box"><button class="close" data-close>×</button><div class="modal-kicker">CLIENT DASHBOARD</div><h2>Applications</h2><p id="applicationsHint">People who applied to this job.</p><div id="applicationsList" class="stack-list"></div></div></div>
+      <div class="profile-header">
 
-<div id="chatsModal" class="modal"><div class="box"><button class="close" data-close>×</button><div class="modal-kicker">MESSAGES</div><h2>Your chats</h2><p>Continue conversations with clients and freelancers.</p><div id="chatList" class="stack-list"></div></div></div>
+        <div>
+          <h2 id="profileName">Your Profile</h2>
+          <span id="profileRole">Freelancer</span>
+        </div>
 
-<div id="chatModal" class="modal"><div class="box chatbox"><button class="close" data-close>×</button><div class="chat-head"><div><div class="modal-kicker">PRIVATE CHAT</div><h2 id="chatTitle">Chat</h2></div><span class="online-dot">●</span></div><div id="messages" class="messages"></div><form id="messageForm" class="messageForm"><input name="message" required maxlength="500" placeholder="Write a message…"><button class="dark" aria-label="Send">➤</button></form></div></div>
+      </div>
 
-<div id="toast" role="status"></div><footer><span class="brand-mini">LW</span> LocalWork V4 • Local marketplace MVP • <span id="year"></span></footer>
-<script type="module" src="script.js"></script>
-</body></html>
+      <form id="profileForm">
+
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="profileNameInput">
+        </div>
+
+        <div class="form-group">
+          <label>Role</label>
+
+          <select id="profileRoleInput">
+            <option value="freelancer">Freelancer / Worker</option>
+            <option value="client">Client / Employer</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Area</label>
+          <input
+            type="text"
+            id="profileArea"
+            placeholder="Your area"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Skills</label>
+          <input
+            type="text"
+            id="profileSkills"
+            placeholder="e.g. Electrician, Design, Delivery"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>About You</label>
+          <textarea
+            id="profileAbout"
+            rows="4"
+            placeholder="Tell people about yourself..."
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Contact</label>
+          <input
+            type="text"
+            id="profileContact"
+            placeholder="Phone / WhatsApp / Email"
+          >
+        </div>
+
+        <button class="primary-btn full-btn" type="submit">
+          💾 Save Profile
+        </button>
+
+      </form>
+
+      <button class="logout-btn" id="logoutBtn">
+        🚪 Logout
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- APPLICATIONS MODAL -->
+  <div class="modal" id="applicationsModal">
+
+    <div class="modal-box large-modal">
+
+      <button class="modal-close" data-close="applicationsModal">×</button>
+
+      <div class="modal-heading">
+
+        <div class="modal-icon">👥</div>
+
+        <div>
+          <h2>Job Applicants</h2>
+          <p>People who applied for this job.</p>
+        </div>
+
+      </div>
+
+      <div id="applicationsList" class="applications-list">
+
+        <div class="empty-state">
+          <span>👥</span>
+          <h3>No applicants yet</h3>
+          <p>Applicants will appear here when someone applies.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- APPLICANT PROFILE MODAL -->
+  <div class="modal" id="applicantProfileModal">
+
+    <div class="modal-box applicant-box">
+
+      <button class="modal-close" data-close="applicantProfileModal">×</button>
+
+      <div class="applicant-cover"></div>
+
+      <div class="applicant-avatar" id="applicantAvatar">
+        👤
+      </div>
+
+      <div class="applicant-info">
+
+        <span class="profile-role-badge" id="applicantRole">
+          Freelancer
+        </span>
+
+        <h2 id="applicantName">Applicant Name</h2>
+
+        <p id="applicantArea">📍 Location</p>
+
+      </div>
+
+      <div class="info-cards">
+
+        <div class="info-card">
+          <span>🛠️</span>
+          <div>
+            <small>Skills</small>
+            <strong id="applicantSkills">Not provided</strong>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <span>📞</span>
+          <div>
+            <small>Contact</small>
+            <strong id="applicantContact">Not provided</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="about-card">
+
+        <h3>About</h3>
+
+        <p id="applicantAbout">
+          No information provided.
+        </p>
+
+      </div>
+
+      <div class="applicant-actions">
+
+        <button class="secondary-btn" id="applicantChatBtn">
+          💬 Chat
+        </button>
+
+        <a
+          class="primary-btn contact-applicant-btn"
+          id="applicantContactBtn"
+          href="#"
+        >
+          📞 Contact
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- CHATS MODAL -->
+  <div class="modal" id="chatsModal">
+
+    <div class="modal-box large-modal chat-list-box">
+
+      <button class="modal-close" data-close="chatsModal">×</button>
+
+      <div class="modal-heading">
+
+        <div class="modal-icon">💬</div>
+
+        <div>
+          <h2>Messages</h2>
+          <p>Chat with clients and workers.</p>
+        </div>
+
+      </div>
+
+      <div class="chat-search">
+
+        <span>🔎</span>
+
+        <input
+          type="text"
+          id="chatSearch"
+          placeholder="Search conversations..."
+        >
+
+      </div>
+
+      <div id="chatList" class="chat-list">
+
+        <div class="empty-state">
+          <span>💬</span>
+          <h3>No conversations</h3>
+          <p>Your conversations will appear here.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- CHAT MODAL -->
+  <div class="modal" id="chatModal">
+
+    <div class="chat-window">
+
+      <div class="chat-header">
+
+        <button class="chat-back" id="chatBackBtn">
+          ←
+        </button>
+
+        <div class="chat-user-avatar" id="chatUserAvatar">
+          👤
+        </div>
+
+        <div class="chat-user-info">
+          <strong id="chatUserName">Chat</strong>
+          <small id="chatUserStatus">LocalWork</small>
+        </div>
+
+        <button class="chat-close" data-close="chatModal">
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="chat-job-info" id="chatJobInfo">
+
+        <span>💼</span>
+
+        <div>
+          <small>Job</small>
+          <strong id="chatJobTitle">Job conversation</strong>
+        </div>
+
+      </div>
+
+
+      <div class="messages-area" id="messagesArea">
+
+        <div class="chat-empty">
+          <div>💬</div>
+          <h3>Start a conversation</h3>
+          <p>Send a message to connect.</p>
+        </div>
+
+      </div>
+
+
+      <form class="message-form" id="messageForm">
+
+        <button
+          type="button"
+          class="message-tool"
+          id="emojiBtn"
+        >
+          😊
+        </button>
+
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Type a message..."
+          autocomplete="off"
+          required
+        >
+
+        <button
+          type="submit"
+          class="send-message-btn"
+        >
+          ➤
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">
+
+    <div class="toast-icon" id="toastIcon">
+      ✓
+    </div>
+
+    <div>
+      <strong id="toastTitle">Success</strong>
+      <p id="toastText">Done</p>
+    </div>
+
+    <button id="toastClose">×</button>
+
+  </div>
+
+
+  <!-- FOOTER -->
+  <footer>
+
+    <div class="footer-inner">
+
+      <div class="footer-brand">
+
+        <span class="brand-icon">LW</span>
+
+        <div>
+          <strong>LocalWork</strong>
+          <p>Connecting local talent with local opportunities.</p>
+        </div>
+
+      </div>
+
+      <div class="footer-links">
+        <span>© <span id="year"></span> LocalWork</span>
+        <span>Made for local communities ❤️</span>
+      </div>
+
+    </div>
+
+  </footer>
+
+
+  <!-- LOADING SCREEN -->
+  <div class="page-loader" id="pageLoader">
+
+    <div class="loader-logo">LW</div>
+
+    <div class="loading-spinner"></div>
+
+    <p>Loading LocalWork...</p>
+
+  </div>
+
+
+  <script type="module" src="script.js"></script>
+
+  <script>
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+    const mobileMenuBtn =
+      document.getElementById("mobileMenuBtn");
+
+    const mobileNav =
+      document.getElementById("mobileNav");
+
+    if (mobileMenuBtn && mobileNav) {
+      mobileMenuBtn.addEventListener("click", () => {
+        mobileNav.classList.toggle("show");
+      });
+    }
+
+    document.querySelectorAll("[data-close]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.close;
+        const modal = document.getElementById(id);
+
+        if (modal) {
+          modal.classList.remove("show");
+        }
+      });
+    });
+
+    document.querySelectorAll(".modal").forEach(modal => {
+      modal.addEventListener("click", e => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      });
+    });
+
+    const togglePassword =
+      document.getElementById("togglePassword");
+
+    const authPassword =
+      document.getElementById("authPassword");
+
+    if (togglePassword && authPassword) {
+      togglePassword.addEventListener("click", () => {
+        authPassword.type =
+          authPassword.type === "password"
+            ? "text"
+            : "password";
+      });
+    }
+
+    const loginBtn =
+      document.getElementById("loginBtn");
+
+    if (loginBtn) {
+      loginBtn.addEventListener("click", () => {
+        const modal = document.getElementById("authModal");
+
+        if (modal) {
+          modal.classList.add("show");
+        }
+      });
+    }
+
+    const heroFindJobs =
+      document.getElementById("heroFindJobs");
+
+    if (heroFindJobs) {
+      heroFindJobs.addEventListener("click", () => {
+        document
+          .getElementById("jobsSection")
+          ?.scrollIntoView({
+            behavior: "smooth"
+          });
+      });
+    }
+
+    const heroPostJob =
+      document.getElementById("heroPostJob");
+
+    if (heroPostJob) {
+      heroPostJob.addEventListener("click", () => {
+        document
+          .getElementById("postJobModal")
+          ?.classList.add("show");
+      });
+    }
+
+    const ctaPostJob =
+      document.getElementById("ctaPostJob");
+
+    if (ctaPostJob) {
+      ctaPostJob.addEventListener("click", () => {
+        document
+          .getElementById("postJobModal")
+          ?.classList.add("show");
+      });
+    }
+
+    const navPost =
+      document.getElementById("navPost");
+
+    if (navPost) {
+      navPost.addEventListener("click", () => {
+        document
+          .getElementById("postJobModal")
+          ?.classList.add("show");
+      });
+    }
+
+    const mNavPost =
+      document.getElementById("mNavPost");
+
+    if (mNavPost) {
+      mNavPost.addEventListener("click", () => {
+        mobileNav?.classList.remove("show");
+
+        document
+          .getElementById("postJobModal")
+          ?.classList.add("show");
+      });
+    }
+
+    const navJobs =
+      document.getElementById("navJobs");
+
+    if (navJobs) {
+      navJobs.addEventListener("click", () => {
+        document
+          .getElementById("jobsSection")
+          ?.scrollIntoView({
+            behavior: "smooth"
+          });
+      });
+    }
+
+    const mNavJobs =
+      document.getElementById("mNavJobs");
+
+    if (mNavJobs) {
+      mNavJobs.addEventListener("click", () => {
+        mobileNav?.classList.remove("show");
+
+        document
+          .getElementById("jobsSection")
+          ?.scrollIntoView({
+            behavior: "smooth"
+          });
+      });
+    }
+  </script>
+
+</body>
+</html>
